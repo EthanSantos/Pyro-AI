@@ -2,15 +2,13 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
-// Optionally, import a shadcn UI button if it was added
-// import { Button } from "@/components/ui/button";
 
 export default function Home() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     axios
-      .get("http://localhost:5000/api/hello")
+      .get("http://127.0.0.1:5000/api/hello")
       .then((response) => {
         setMessage(response.data.message);
       })
@@ -25,8 +23,6 @@ export default function Home() {
       <p className="text-lg mb-4">
         {message ? message : "Loading message from Flask..."}
       </p>
-      {/* Example usage of a shadcn UI Button */}
-      {/* <Button>Click me</Button> */}
     </div>
   );
 }
