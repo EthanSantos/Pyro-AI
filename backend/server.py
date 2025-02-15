@@ -1,12 +1,77 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
+import tensorflow as tf
+from PIL import Image
+import requests
+from io import BytesIO
+import numpy as np
+from utils.image_processor import preprocess_image
 
 app = Flask(__name__)
-CORS(app)  # This enables CORS for all routes and origins
+CORS(app)
 
-@app.route('/api/hello', methods=['GET'])
-def hello():
-    return jsonify(message="Hello from Flask!")
+# load the model
+model = tf.keras.models.load_model('models/wildfire_cnn.keras')
+
+def download_and_process_image(image_url):
+    """Download satellite image from URL and preprocess it"""
+    response = requests.get(image_url)
+    if response.status_code != 200:
+        raise Exception("Failed to fetch image")
+    
+    # open image from response 
+    image = Image.open(BytesIO(response.content))
+    
+    # preprocess image using existing utility
+    processed_image = preprocess_image(image)
+    return processed_image
+
+def get_risk_level(prediction):
+    """Convert model prediction to risk level"""
+    risk_score = float(prediction[0])  
+    
+    if risk_score > 0.7:
+        return "high"
+    elif risk_score > 0.3:
+        return "medium"
+    else:
+        return "low"
+
+@app.route('/api/predict', methods=['POST'])
+def predict_wildfire_risk():
+    try:
+        data = request.json
+        if not data or 'imageUrl' not in data:
+            return jsonify({"error": "No image URL provided"}), 400
+
+        # get coordinates for logging/tracking
+        coordinates = data.get('coordinates', None)
+        
+        # download and process data
+        processed_image = download_and_process_image(data['imageUrl'])
+        
+        # make prediction
+        prediction = model.predict(processed_image)
+        risk_level = get_risk_level(prediction)
+        
+        # log prediction for monitoring
+        app.logger.info(f"Prediction made for coordinates {coordinates}: {risk_level}")
+        
+        return jsonify({
+            "risk": risk_level,
+            "coordinates": coordinates,
+            "confidence": float(prediction[0])
+        })
+
+    except Exception as e:
+        app.logger.error(f"Error during prediction: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+# can def remove this 
+@app.errorhandler(Exception)
+def handle_error(error):
+    app.logger.error(f"Unhandled error: {str(error)}")
+    return jsonify({"error": "Internal server error"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
