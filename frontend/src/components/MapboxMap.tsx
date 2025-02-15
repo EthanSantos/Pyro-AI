@@ -205,15 +205,15 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         data: personData,
       });
 
-      const personEl = document.createElement("div");
-      personEl.style.width = "20px";
-      personEl.style.height = "20px";
-      personEl.style.backgroundColor = "#007aff";
-      personEl.style.border = "2px solid white";
-      personEl.style.borderRadius = "50%";
-      personEl.style.boxShadow = "0 0 10px rgba(0,0,0,0.15)";
+      const personMarker = document.createElement("div");
+      personMarker.style.width = "20px";
+      personMarker.style.height = "20px";
+      personMarker.style.backgroundColor = "#007aff";
+      personMarker.style.border = "2px solid white";
+      personMarker.style.borderRadius = "50%";
+      personMarker.style.boxShadow = "0 0 10px rgba(0,0,0,0.15)";
 
-      new mapboxgl.Marker({ element: personEl, draggable: true })
+      new mapboxgl.Marker({ element: personMarker, draggable: true })
         .setLngLat(personData.features[0].geometry.coordinates as [number, number])
         .addTo(map);
     });
