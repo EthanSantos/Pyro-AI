@@ -26,17 +26,6 @@ def download_and_process_image(image_url):
     processed_image = preprocess_image(image)
     return processed_image
 
-def get_risk_level(prediction):
-    """Convert model prediction to risk level"""
-    risk_score = float(prediction[0])  
-    
-    if risk_score > 0.7:
-        return "high"
-    elif risk_score > 0.3:
-        return "medium"
-    else:
-        return "low"
-
 @app.route('/api/predict', methods=['POST'])
 def predict_wildfire_risk():
     try:
@@ -52,22 +41,23 @@ def predict_wildfire_risk():
         
         # make prediction
         prediction = model.predict(processed_image)
-        risk_level = get_risk_level(prediction)
+        risk_score = float(prediction[0])
+        # Convert risk score to percentage (0-100)
+        risk_percentage = int(risk_score * 100)
         
         # log prediction for monitoring
-        app.logger.info(f"Prediction made for coordinates {coordinates}: {risk_level}")
+        app.logger.info(f"Prediction made for coordinates {coordinates}: {risk_percentage}%")
         
         return jsonify({
-            "risk": risk_level,
+            "risk": f"{risk_percentage}%",
             "coordinates": coordinates,
-            "confidence": float(prediction[0])
+            "confidence": risk_percentage
         })
 
     except Exception as e:
         app.logger.error(f"Error during prediction: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-# can def remove this 
 @app.errorhandler(Exception)
 def handle_error(error):
     app.logger.error(f"Unhandled error: {str(error)}")
