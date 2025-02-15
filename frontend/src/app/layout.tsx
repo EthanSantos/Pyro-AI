@@ -1,9 +1,8 @@
-// app/layout.tsx or app/RootLayout.tsx
+// app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-// Import your navigation bar (client component)
 import NavigationBar from "@/components/NavigationBar";
 
 const geistSans = Geist({
@@ -31,10 +30,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex`}
       >
-        {/* Navigation bar rendered once for all pages */}
         <NavigationBar />
-
-        {/* Main Content Area */}
         <div className="flex-1">{children}</div>
       </body>
     </html>
