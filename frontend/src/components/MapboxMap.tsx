@@ -11,7 +11,7 @@ import type {
   Polygon,
 } from "geojson";
 
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
+mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN
 
 type FireProperties = {
   Name: string;
