@@ -13,7 +13,7 @@ export default function Dashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="p-4 space-y-4 flex-1">
+      <main className="bg-slate-100 p-4 space-y-4 flex-1">
         {/* Container for cards and map, left-aligned */}
         <div className="w-[75%] space-y-4">
           {/* Top Row: Three Cards */}

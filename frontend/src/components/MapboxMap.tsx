@@ -4,6 +4,7 @@ import React, { useRef, useEffect } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import * as turf from "@turf/turf";
+import { Flame } from "lucide-react";
 import type {
   FeatureCollection,
   Feature,
@@ -21,9 +22,6 @@ type FireProperties = {
   Url: string;
 }
 
-/**
- * Fire data typed with specific FireProperties
- */
 const fireData: FeatureCollection<Point, FireProperties> = {
   type: "FeatureCollection",
   features: [
@@ -77,9 +75,6 @@ type PersonProperties = {
   Name: string;
 }
 
-/**
- * Person data with specific PersonProperties
- */
 const personData: FeatureCollection<Point, PersonProperties> = {
   type: "FeatureCollection",
   features: [
@@ -96,12 +91,6 @@ const personData: FeatureCollection<Point, PersonProperties> = {
   ],
 };
 
-/**
- * buildCirclePolygons
- * - Takes an array of point features
- * - Generates a 2 km radius polygon around each point using Turf.js
- * - Returns a FeatureCollection of Polygons
- */
 function buildCirclePolygons(
     pointFeatures: Feature<Point, FireProperties>[],
     radiusKm: number
@@ -127,7 +116,6 @@ function buildCirclePolygons(
     };
   }
 
-// 2 km radius for each fire
 const fireCirclesData = buildCirclePolygons(fireData.features, 2);
 
 interface MapboxMapProps {
@@ -148,7 +136,6 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    // Initialize the map (satellite style)
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: "mapbox://styles/mapbox/satellite-v9",
@@ -157,13 +144,12 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     });
 
     map.on("load", () => {
-      // 1. Add a GeoJSON source for the fire data (Points)
       map.addSource("fires", {
         type: "geojson",
         data: fireData,
       });
 
-      // 2. Add red markers for each fire
+      // Create fire markers with custom fire icon
       fireData.features.forEach((feature) => {
         const coords = feature.geometry.coordinates as [number, number];
         const { Name, Location, County, AcresBurned, Url } = feature.properties;
@@ -176,36 +162,50 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
           <p><a href="${Url}" target="_blank">More Info</a></p>
         `;
 
-        new mapboxgl.Marker({ color: "red" })
+        // Create custom fire icon element
+        const fireEl = document.createElement("div");
+        fireEl.style.width = "32px";
+        fireEl.style.height = "32px";
+        fireEl.style.borderRadius = "50%";
+        fireEl.style.backgroundColor = "rgba(255, 69, 0, 0.9)";
+        fireEl.style.display = "flex";
+        fireEl.style.alignItems = "center";
+        fireEl.style.justifyContent = "center";
+        fireEl.style.boxShadow = "0 0 10px rgba(255, 69, 0, 0.5)";
+
+        // Add flame icon using innerHTML
+        fireEl.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+          </svg>
+        `;
+
+        new mapboxgl.Marker({ element: fireEl })
           .setLngLat(coords)
           .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(popupContent))
           .addTo(map);
       });
 
-      // 3. Add a source for the fire circles (Polygon)
       map.addSource("fire-circles", {
         type: "geojson",
         data: fireCirclesData,
       });
 
-      // 4. Add a fill layer for the circle polygons (2 km radius)
       map.addLayer({
         id: "fire-circles-fill",
         type: "fill",
         source: "fire-circles",
         paint: {
-          "fill-color": "rgba(255, 0, 0, 0.2)",
-          "fill-outline-color": "red",
+          "fill-color": "rgba(255, 69, 0, 0.2)",
+          "fill-outline-color": "rgb(255, 69, 0)",
         },
       });
 
-      // 5. Add a source for our person's location (Point)
       map.addSource("person", {
         type: "geojson",
         data: personData,
       });
 
-      // 6. Create a custom marker for the person, Apple Maps style, draggable
       const personEl = document.createElement("div");
       personEl.style.width = "20px";
       personEl.style.height = "20px";
@@ -220,7 +220,6 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         .addTo(map);
     });
 
-    // Cleanup on unmount
     return () => map.remove();
   }, [center, zoom]);
 

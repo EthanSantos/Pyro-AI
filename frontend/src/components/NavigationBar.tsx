@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Calendar, User } from "lucide-react";
+import { Home, Map, Settings } from "lucide-react";
 
 const navItems = [
   { name: "Home", href: "/", icon: Home },
-  { name: "Dashboard", href: "/dashboard", icon: Calendar },
-  { name: "Profile", href: "/profile", icon: User },
+  { name: "Dashboard", href: "/dashboard", icon: Map },
+  { name: "Settings", href: "/settings", icon: Settings },
 ];
+
 
 export default function NavigationBar() {
   const pathname = usePathname();
