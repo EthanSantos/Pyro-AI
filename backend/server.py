@@ -37,6 +37,7 @@ def predict_wildfire_risk():
         coordinates = data.get('coordinates', None)
         
         # download and process data
+        print(data['imageUrl'])
         processed_image = download_and_process_image(data['imageUrl'])
         
         # make prediction

@@ -22,10 +22,7 @@ const fireData: FeatureCollection<Point, FireProperties> = {
   features: [
     {
       type: "Feature",
-      geometry: {
-        type: "Point",
-        coordinates: [-118.47541, 34.0968],
-      },
+      geometry: { type: "Point", coordinates: [-118.47541, 34.0968] },
       properties: {
         Name: "Sepulveda Fire",
         Location:
@@ -37,10 +34,7 @@ const fireData: FeatureCollection<Point, FireProperties> = {
     },
     {
       type: "Feature",
-      geometry: {
-        type: "Point",
-        coordinates: [-117.237, 32.8622],
-      },
+      geometry: { type: "Point", coordinates: [-117.237, 32.8622] },
       properties: {
         Name: "Gilman Fire",
         Location: "Gilman Drive and Via Alicante, South of La Jolla",
@@ -51,10 +45,7 @@ const fireData: FeatureCollection<Point, FireProperties> = {
     },
     {
       type: "Feature",
-      geometry: {
-        type: "Point",
-        coordinates: [-116.964339, 33.708601],
-      },
+      geometry: { type: "Point", coordinates: [-116.964339, 33.708601] },
       properties: {
         Name: "Gibbel Fire",
         Location: "State Street and Gibbel Road, Hemet",
@@ -75,13 +66,8 @@ const personData: FeatureCollection<Point, PersonProperties> = {
   features: [
     {
       type: "Feature",
-      geometry: {
-        type: "Point",
-        coordinates: [-117.227, 32.8722],
-      },
-      properties: {
-        Name: "My Person",
-      },
+      geometry: { type: "Point", coordinates: [-117.227, 32.8722] },
+      properties: { Name: "My Person" },
     },
   ],
 };
@@ -96,13 +82,9 @@ function buildCirclePolygons(
       steps: 64,
       units: "kilometers",
     });
-    circle.properties = {
-      ...feature.properties!,
-      radiusKm,
-    };
+    circle.properties = { ...feature.properties!, radiusKm };
     return circle as Feature<Polygon, FireProperties & { radiusKm: number }>;
   });
-
   return {
     type: "FeatureCollection",
     features: circles,
@@ -114,9 +96,9 @@ const fireCirclesData = buildCirclePolygons(fireData.features, 2);
 interface MapboxMapProps {
   width?: string;
   height?: string;
-  // These props are only used at initialization
   center?: [number, number];
   zoom?: number;
+  onRiskChange?: (risk: string) => void;
 }
 
 const MapboxMap: React.FC<MapboxMapProps> = ({
@@ -124,22 +106,14 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   height = "600px",
   center = [-117.237, 32.8622],
   zoom = 12,
+  onRiskChange,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-
-  // The current position of the draggable marker
   const [selectedLocation, setSelectedLocation] = useState<[number, number]>(
     personData.features[0].geometry.coordinates as [number, number]
   );
 
-  // The returned wildfire risk (as a percentage string)
-  const [wildfireRisk, setWildfireRisk] = useState<string | null>(null);
-
-  /**
-   * Fetch satellite image from Mapbox & send to the backend for risk prediction.
-   * This function calculates a ~2km bounding box, builds the static satellite image URL.
-   */
   const fetchSatelliteImageAndPredict = async (
     coordinates: [number, number]
   ) => {
@@ -147,7 +121,6 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
       const [lng, lat] = coordinates;
       const radius = 0.02; // ~2km in degrees
       const bounds = [lng - radius, lat - radius, lng + radius, lat + radius];
-
       const imageUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/[${bounds.join(
         ","
       )}]/400x400?access_token=${mapboxgl.accessToken}`;
@@ -157,18 +130,21 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         coordinates,
       });
 
-      setWildfireRisk(data.risk);
+      // Update risk in parent via callback.
+      if (onRiskChange) {
+        onRiskChange(data.risk);
+      }
     } catch (error) {
       console.error("Error fetching prediction:", error);
-      setWildfireRisk("Error getting prediction");
+      if (onRiskChange) {
+        onRiskChange("Error getting prediction");
+      }
     }
   };
 
-  // Initialize the map only once on mount.
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    // Create the Mapbox map instance.
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: "mapbox://styles/mapbox/satellite-v9",
@@ -178,15 +154,11 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     mapRef.current = map;
 
     map.on("load", () => {
-      // ---- Add Fire Points ----
-      map.addSource("fires", {
-        type: "geojson",
-        data: fireData,
-      });
+      // Add Fire Points
+      map.addSource("fires", { type: "geojson", data: fireData });
       fireData.features.forEach((feature) => {
         const coords = feature.geometry.coordinates as [number, number];
         const { Name, Location, County, AcresBurned, Url } = feature.properties;
-
         const popupContent = `
           <h3>${Name}</h3>
           <p><strong>Location:</strong> ${Location}</p>
@@ -194,7 +166,6 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
           <p><strong>Acres Burned:</strong> ${AcresBurned}</p>
           <p><a href="${Url}" target="_blank">More Info</a></p>
         `;
-
         const fireEl = document.createElement("div");
         fireEl.style.width = "32px";
         fireEl.style.height = "32px";
@@ -218,14 +189,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
                      a2.5 2.5 0 0 0 2.5 2.5z"/>
           </svg>
         `;
-
         new mapboxgl.Marker({ element: fireEl })
           .setLngLat(coords)
           .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(popupContent))
           .addTo(map);
       });
 
-      // ---- Add Fire Circles (2 km) ----
+      // Add Fire Circles
       map.addSource("fire-circles", {
         type: "geojson",
         data: fireCirclesData,
@@ -240,11 +210,10 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         },
       });
 
-      // ---- Add Draggable Person Marker ----
+      // Add Draggable Person Marker (blue)
       const personMarkerEl = document.createElement("div");
       personMarkerEl.style.width = "20px";
       personMarkerEl.style.height = "20px";
-      // Blue marker (remains blue regardless of risk)
       personMarkerEl.style.backgroundColor = "#007aff";
       personMarkerEl.style.border = "2px solid white";
       personMarkerEl.style.borderRadius = "50%";
@@ -257,12 +226,10 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         .setLngLat(selectedLocation)
         .addTo(map);
 
-      // On drag start, make marker semi-transparent
       marker.on("dragstart", () => {
         personMarkerEl.style.opacity = "0.5";
       });
 
-      // On drag end, restore opacity and update location & risk
       marker.on("dragend", () => {
         personMarkerEl.style.opacity = "1";
         const lngLat = marker.getLngLat();
@@ -271,31 +238,22 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         fetchSatelliteImageAndPredict(newCoords);
       });
 
-      // Optionally, fetch initial risk for the default location
+      // Fetch initial risk for default location
       fetchSatelliteImageAndPredict(selectedLocation);
     });
 
-    // Cleanup: remove the map on unmount
     return () => {
       map.remove();
     };
-  }, []); // empty dependency array so this runs only once
+  }, []); // Run once on mount
 
   return (
     <div className="relative" style={{ width, height }}>
-      {/* Map Container */}
       <div
         ref={mapContainerRef}
         style={{ width: "100%", height: "100%" }}
         className="border rounded shadow"
       />
-      {/* Risk Assessment Panel */}
-      {wildfireRisk && (
-        <div className="absolute bottom-4 left-4 bg-white p-4 rounded shadow">
-          <h3 className="font-bold">Wildfire Risk Assessment</h3>
-          <p>Risk Level: {wildfireRisk}</p>
-        </div>
-      )}
     </div>
   );
 };

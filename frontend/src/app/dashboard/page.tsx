@@ -1,10 +1,13 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import MapboxMap from "@/components/MapboxMap";
 
 export default function Dashboard() {
+  // State to hold the risk value coming from MapboxMap
+  const [riskValue, setRiskValue] = useState<string>("N/A");
+
   return (
     <div className="bg-white text-gray-800 flex flex-col min-h-screen">
       {/* Page Header */}
@@ -14,7 +17,6 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main className="bg-slate-100 p-4 space-y-4 flex-1">
-        {/* Container for cards and map, left-aligned */}
         <div className="w-[75%] space-y-4">
           {/* Top Row: Three Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -54,15 +56,15 @@ export default function Dashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4">
-                <p className="text-2xl font-bold text-red-600">High</p>
-                <p className="text-xs text-gray-500 mt-1">+2.5% from last week</p>
+                <p className="text-2xl font-bold text-red-600">{riskValue}</p>
+                <p className="text-xs text-gray-500 mt-1">(Updated from map)</p>
               </CardContent>
             </Card>
           </div>
 
           {/* Map Section */}
           <div className="bg-white border border-gray-200 shadow-sm rounded-md">
-            <MapboxMap width="100%" height="600px" />
+            <MapboxMap width="100%" height="600px" onRiskChange={setRiskValue} />
           </div>
         </div>
       </main>
