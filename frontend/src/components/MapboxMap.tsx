@@ -4,7 +4,6 @@ import React, { useRef, useEffect } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import * as turf from "@turf/turf";
-import { Flame } from "lucide-react";
 import type {
   FeatureCollection,
   Feature,
@@ -216,7 +215,6 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
 
       new mapboxgl.Marker({ element: personEl, draggable: true })
         .setLngLat(personData.features[0].geometry.coordinates as [number, number])
-        .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML("<h3>My Person</h3>"))
         .addTo(map);
     });
 
