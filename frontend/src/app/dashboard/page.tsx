@@ -1,46 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import MapboxMap from "@/components/MapboxMap";
-
-// A simple animated number component that animates from the previous value to the new one.
-interface AnimatedNumberProps {
-  value: number;
-  duration?: number; // duration in ms
-  className?: string;
-}
-
-const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
-  value,
-  duration = 300,
-  className,
-}) => {
-  const [displayValue, setDisplayValue] = useState(value);
-
-  useEffect(() => {
-    const diff = value - displayValue;
-    if (diff === 0) return;
-
-    const steps = Math.floor(duration / 20);
-    const stepIncrement = diff / steps;
-    let currentStep = 0;
-    const interval = setInterval(() => {
-      currentStep++;
-      setDisplayValue((prev) => {
-        const next = prev + stepIncrement;
-        if (currentStep >= steps) {
-          clearInterval(interval);
-          return value;
-        }
-        return next;
-      });
-    }, 20);
-    return () => clearInterval(interval);
-  }, [value, duration, displayValue]);
-
-  return <span className={className}>{Math.round(displayValue)}</span>;
-};
+import { AnimatedNumber } from "@/components/AnimatedNumber";
+import { Wind, Shield, Flame } from 'lucide-react';
 
 // Function to pick a color based on safety score.
 function getSafetyColor(score: number): string {
@@ -51,13 +15,10 @@ function getSafetyColor(score: number): string {
 }
 
 export default function Dashboard() {
-  // State to hold the risk value coming from MapboxMap
   const [riskValue, setRiskValue] = useState<string>("N/A");
-  // State to hold the safety score from MapboxMap
   const [safetyScore, setSafetyScore] = useState<number | null>(null);
 
-  // For Air Quality Index we'll assume a fixed value for now.
-  const aqi = 157; // Example value
+  const aqi = 157;
 
   return (
     <div className="bg-white text-gray-800 flex flex-col min-h-screen">
@@ -72,51 +33,44 @@ export default function Dashboard() {
           {/* Top Row: Three Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Air Quality Index Card */}
-            <Card className="shadow-sm border border-gray-200 rounded-md">
-              <CardHeader className="p-4 border-b border-gray-100">
-                <CardTitle className="text-sm font-semibold text-gray-700">
-                  Air Quality Index
-                </CardTitle>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Air Quality Index</CardTitle>
+                <Wind className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent className="p-4">
-                <p className="text-2xl font-bold text-red-600">{aqi}</p>
-                <p className="text-xs text-gray-500 mt-1">Unhealthy</p>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">{aqi}</div>
+                <p className="text-xs text-muted-foreground">Unhealthy</p>
               </CardContent>
             </Card>
 
             {/* Safety Score Card */}
-            <Card className="shadow-sm border border-gray-200 rounded-md">
-              <CardHeader className="p-4 border-b border-gray-100">
-                <CardTitle className="text-sm font-semibold text-gray-700">
-                  Safety Score
-                </CardTitle>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Safety Score</CardTitle>
+                <Shield className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent className="p-4">
-                <p
-                  className={`text-2xl font-bold ${
-                    safetyScore !== null ? getSafetyColor(safetyScore) : ""
-                  }`}
-                >
+              <CardContent>
+                <div className={`text-2xl font-bold ${safetyScore !== null ? getSafetyColor(safetyScore) : ""}`}>
                   {safetyScore !== null ? (
                     <AnimatedNumber value={safetyScore} duration={200} />
                   ) : (
                     "N/A"
                   )}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">(Updated from map)</p>
+                </div>
+                <p className="text-xs text-muted-foreground">Updated from map</p>
               </CardContent>
             </Card>
 
             {/* Risk Level Card */}
-            <Card className="shadow-sm border border-gray-200 rounded-md">
-              <CardHeader className="p-4 border-b border-gray-100">
-                <CardTitle className="text-sm font-semibold text-gray-700">
-                  Wildfire Risk Level
-                </CardTitle>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Wildfire Risk Level</CardTitle>
+                <Flame className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
-              <CardContent className="p-4">
-                <p className="text-2xl font-bold text-red-600">{riskValue}</p>
-                <p className="text-xs text-gray-500 mt-1">(Updated from map)</p>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">{riskValue}</div>
+                <p className="text-xs text-muted-foreground">Updated from map</p>
               </CardContent>
             </Card>
           </div>
