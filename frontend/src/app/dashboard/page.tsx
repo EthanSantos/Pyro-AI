@@ -10,15 +10,12 @@ export default function Dashboard() {
 
   return (
     <div className="bg-white text-gray-800 flex flex-col min-h-screen">
-      {/* Page Header */}
       <header className="p-4 border-b border-gray-200">
         <h1 className="text-xl font-bold">Wildfire Monitoring Dashboard</h1>
       </header>
 
-      {/* Main Content */}
       <main className="bg-slate-100 p-4 space-y-4 flex-1">
         <div className="w-[75%] space-y-4">
-          {/* Top Row: Three Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Air Quality Index Card */}
             <Card className="shadow-sm border border-gray-200 rounded-md">
@@ -33,7 +30,7 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Safety Score Card (was Weather) */}
+            {/* Safety Score Card */}
             <Card className="shadow-sm border border-gray-200 rounded-md">
               <CardHeader className="p-4 border-b border-gray-100">
                 <CardTitle className="text-sm font-semibold text-gray-700">
@@ -54,7 +51,7 @@ export default function Dashboard() {
             <Card className="shadow-sm border border-gray-200 rounded-md">
               <CardHeader className="p-4 border-b border-gray-100">
                 <CardTitle className="text-sm font-semibold text-gray-700">
-                  Risk Level
+                  Wildfire Risk Level
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4">
