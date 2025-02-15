@@ -72,6 +72,7 @@ const personData: FeatureCollection<Point, PersonProperties> = {
   ],
 };
 
+// (Optional) Retain circle polygons if you want to display them.
 function buildCirclePolygons(
   pointFeatures: Feature<Point, FireProperties>[],
   radiusKm: number
@@ -99,6 +100,7 @@ interface MapboxMapProps {
   center?: [number, number];
   zoom?: number;
   onRiskChange?: (risk: string) => void;
+  onSafetyScoreChange?: (score: number) => void;
 }
 
 const MapboxMap: React.FC<MapboxMapProps> = ({
@@ -107,12 +109,39 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   center = [-117.237, 32.8622],
   zoom = 12,
   onRiskChange,
+  onSafetyScoreChange,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<[number, number]>(
     personData.features[0].geometry.coordinates as [number, number]
   );
+
+  // Compute safety score based on distance from fire centers.
+  // We assume a danger radius R = 2 km. If distance d < 2 km, score = 0.
+  // Otherwise, score = min(100, round((d - 2)*20)).
+  const computeSafetyScore = (personCoords: [number, number]) => {
+    const R = 2; // danger zone radius in km
+    const personPoint = turf.point(personCoords);
+    let candidateScores: number[] = [];
+    fireData.features.forEach((feature) => {
+      const fireCoords = feature.geometry.coordinates as [number, number];
+      const firePoint = turf.point(fireCoords);
+      const d = turf.distance(personPoint, firePoint, { units: "kilometers" });
+      const score = d < R ? 0 : Math.min(100, Math.round((d - R) * 20));
+      candidateScores.push(score);
+    });
+    const safetyScore = Math.min(...candidateScores);
+    console.log(
+      `Safety score: ${safetyScore} (Candidate scores: [${candidateScores.join(
+        ", "
+      )}])`
+    );
+    if (onSafetyScoreChange) {
+      onSafetyScoreChange(safetyScore);
+    }
+    return safetyScore;
+  };
 
   const fetchSatelliteImageAndPredict = async (
     coordinates: [number, number]
@@ -130,7 +159,6 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         coordinates,
       });
 
-      // Update risk in parent via callback.
       if (onRiskChange) {
         onRiskChange(data.risk);
       }
@@ -195,7 +223,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
           .addTo(map);
       });
 
-      // Add Fire Circles
+      // (Optional) Add Fire Circles
       map.addSource("fire-circles", {
         type: "geojson",
         data: fireCirclesData,
@@ -236,10 +264,12 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         const newCoords: [number, number] = [lngLat.lng, lngLat.lat];
         setSelectedLocation(newCoords);
         fetchSatelliteImageAndPredict(newCoords);
+        computeSafetyScore(newCoords);
       });
 
-      // Fetch initial risk for default location
+      // Fetch initial risk and safety score for default location.
       fetchSatelliteImageAndPredict(selectedLocation);
+      computeSafetyScore(selectedLocation);
     });
 
     return () => {

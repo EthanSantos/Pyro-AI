@@ -5,8 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import MapboxMap from "@/components/MapboxMap";
 
 export default function Dashboard() {
-  // State to hold the risk value coming from MapboxMap
   const [riskValue, setRiskValue] = useState<string>("N/A");
+  const [safetyScore, setSafetyScore] = useState<number | null>(null);
 
   return (
     <div className="bg-white text-gray-800 flex flex-col min-h-screen">
@@ -33,17 +33,19 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Weather Card */}
+            {/* Safety Score Card (was Weather) */}
             <Card className="shadow-sm border border-gray-200 rounded-md">
               <CardHeader className="p-4 border-b border-gray-100">
                 <CardTitle className="text-sm font-semibold text-gray-700">
-                  Weather
+                  Safety Score
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-4">
-                <p className="text-2xl font-bold">86°F</p>
+                <p className="text-2xl font-bold">
+                  {safetyScore !== null ? safetyScore : "N/A"}
+                </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  Wind: 10 mph SE • Humidity: 45%
+                  (Updated from map)
                 </p>
               </CardContent>
             </Card>
@@ -64,7 +66,12 @@ export default function Dashboard() {
 
           {/* Map Section */}
           <div className="bg-white border border-gray-200 shadow-sm rounded-md">
-            <MapboxMap width="100%" height="600px" onRiskChange={setRiskValue} />
+            <MapboxMap
+              width="100%"
+              height="600px"
+              onRiskChange={setRiskValue}
+              onSafetyScoreChange={setSafetyScore}
+            />
           </div>
         </div>
       </main>
