@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import MapboxMap from "@/components/MapboxMap";
 
 export default function Home() {
   return (
