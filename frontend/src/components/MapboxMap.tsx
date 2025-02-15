@@ -128,7 +128,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   width = "100%",
   height = "600px",
   center = [-117.237, 32.8622],
-  zoom = 14,
+  zoom = 12,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
