@@ -3,6 +3,25 @@
 import { useState, useEffect } from "react"
 import NewsCard from "@/components/ui/NewsCard"
 import { Button } from "@/components/ui/button"
+import { FaSearch } from "react-icons/fa"
+import { Input } from "@/components/ui/input"
+
+function SearchNews() {  
+  const [isFocused, setIsFocused] = useState<Boolean>(false)
+
+  return(
+    <div className="relative w-[400px]">
+      <FaSearch className={`absolute left-4 top-1/2 transform -translate-y-1/2 ${isFocused ? "text-[#DD5A2B]" : "text-muted-foreground"}`}/>
+      <Input
+        type="text"
+        placeholder="Search news..."
+        className="p-2 pl-10 focus-visible:ring-[#DD5A2B]"
+        onBlur={() => setIsFocused(false)}
+        onFocus={() => setIsFocused(true)}
+      />
+    </div>
+  )
+}
 
 function FilterBar({setFilter} : {setFilter: Function}) {
   const filters = ["All", "Alerts", "Evacuations", "Weather", "General"]
@@ -68,8 +87,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col items-start justify-start p-8 space-y-4">
-      <h1 className="text-3xl font-bold">Wildfire News & Updates</h1>
-      
+      <div className="flex items-center justify-between w-full">
+        <h1 className="text-3xl font-bold">Wildfire News & Updates</h1>
+        <SearchNews />
+      </div>
+
       <div>
        <FilterBar setFilter={setFilter}/>
       </div>
