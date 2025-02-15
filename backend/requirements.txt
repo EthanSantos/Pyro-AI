@@ -1,2 +1,6 @@
 Flask
 flask-cors
+tensorflow
+numpy
+Pillow
+reque
