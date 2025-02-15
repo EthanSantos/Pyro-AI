@@ -2,6 +2,25 @@
 
 import { useState, useEffect } from "react"
 import NewsCard from "@/components/ui/NewsCard"
+import { Button } from "@/components/ui/button"
+
+function FilterBar({setFilter} : {setFilter: Function}) {
+  const filters = ["All", "Alerts", "Evacuations", "Weather", "General"]
+
+  return(
+    <div className="min-w-auto border rounded-md space-x-4 p-1 mb-6">
+      {filters.map((filter) => (
+        <Button
+          key={filter}
+          size='sm'
+          onClick={() => setFilter(filter)}
+        >
+          {filter}
+        </Button>
+      ))}
+    </div>
+  )
+}
 
 export default function Home() {
 
@@ -35,24 +54,25 @@ export default function Home() {
     },
   ]
 
-  const [filter, setFilter] = useState<String | null>(null)  // TODO: Implement filter functionality.
+  const [filter, setFilter] = useState<String>("All")
   const [displayedNews, setDisplayedNews] = useState<Array<{id: number, title: String, tag: String, source: String, date: String, content: String, link: String}>>(allNews)
 
   useEffect(() => {
-    if (filter) {
+    if (filter !== "All") {
       const filteredNews = allNews.filter((news) => news.tag === filter)
       setDisplayedNews(filteredNews)
     } else {
       setDisplayedNews(allNews)
     }
-
   }, [filter])
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-8 space-y-4">
-      <h1 className="text-3xl font-bold mb-4">
-        [PLACEHOLDER] Next.js App Router with Axios, shadcn UI & Flask
-      </h1>
+    <div className="min-h-screen flex flex-col items-start justify-start p-8 space-y-4">
+      <h1 className="text-3xl font-bold">Wildfire News & Updates</h1>
+      
+      <div>
+       <FilterBar setFilter={setFilter}/>
+      </div>
 
       {displayedNews.map((news) => (
         <NewsCard
