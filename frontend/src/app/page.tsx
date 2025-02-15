@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button"
 import { FaSearch } from "react-icons/fa"
 import { Input } from "@/components/ui/input"
 
-function SearchNews() {  
+function SearchNews({setSubmittedQuery} : {setSubmittedQuery: React.SetStateAction<any>}) {  
   const [isFocused, setIsFocused] = useState<Boolean>(false)
+  const [query, setQuery] = useState<any>("")
 
   return(
     <div className="relative w-[400px]">
@@ -15,6 +16,11 @@ function SearchNews() {
       <Input
         type="text"
         placeholder="Search news..."
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value)
+          setSubmittedQuery(e.target.value)
+        }}
         className="p-2 pl-10 focus-visible:ring-[#DD5A2B]"
         onBlur={() => setIsFocused(false)}
         onFocus={() => setIsFocused(true)}
@@ -73,6 +79,7 @@ export default function Home() {
     },
   ]
 
+  // Filter results based on selected tag.
   const [filter, setFilter] = useState<String>("All")
   const [displayedNews, setDisplayedNews] = useState<Array<{id: number, title: String, tag: String, source: String, date: String, content: String, link: String}>>(allNews)
 
@@ -85,11 +92,24 @@ export default function Home() {
     }
   }, [filter])
 
+  // Filter results by title and content as input is typed in search bar.
+  const [submittedQuery, setSubmittedQuery] = useState<any>("")
+
+  useEffect(() => {
+    if(submittedQuery){
+      const filteredNews : Array<{id: number, title: String, tag: String, source: String, date: String, content: String, link: String}> = allNews.filter((news) => (news.title.toLowerCase().includes(submittedQuery.toLowerCase())))
+      setDisplayedNews(filteredNews)
+    }
+    else {
+      setDisplayedNews(allNews)
+    }
+  }, [submittedQuery])
+
   return (
     <div className="min-h-screen flex flex-col items-start justify-start p-8 space-y-4">
       <div className="flex items-center justify-between w-full">
         <h1 className="text-3xl font-bold">Wildfire News & Updates</h1>
-        <SearchNews />
+        <SearchNews setSubmittedQuery={setSubmittedQuery}/>
       </div>
 
       <div>
