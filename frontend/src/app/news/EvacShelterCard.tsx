@@ -41,7 +41,7 @@ export function EvacShelterCard({ shelter }: { shelter: EvacShelter }) {
           <p className="text-sm text-muted-foreground">{shelter.address}</p>
         </div>
         <Button
-          variant="ghost"
+          variant="destructive"
           size="icon"
           onClick={(e) => {
             e.stopPropagation();

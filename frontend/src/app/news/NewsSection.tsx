@@ -49,7 +49,7 @@ const NewsCard = ({ news }: { news: NewsItem }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const [shouldShowToggle, setShouldShowToggle] = useState(false);
-  const maxHeight = 200; // Maximum height in pixels before showing toggle
+  const maxHeight = 100; // Reduced from 200px to 100px
 
   useEffect(() => {
     if (contentRef.current) {
@@ -73,12 +73,17 @@ const NewsCard = ({ news }: { news: NewsItem }) => {
         </div>
       </div>
 
-      <div 
-        ref={contentRef}
-        className={`mt-2 text-sm overflow-hidden transition-all duration-200`}
-        style={{ maxHeight: isExpanded ? `${contentRef.current?.scrollHeight}px` : `${maxHeight}px` }}
-        dangerouslySetInnerHTML={{ __html: news.formattedSummary }}
-      />
+      <div className="relative">
+        <div 
+          ref={contentRef}
+          className={`mt-2 text-sm overflow-hidden transition-all duration-200`}
+          style={{ maxHeight: isExpanded ? `${contentRef.current?.scrollHeight}px` : `${maxHeight}px` }}
+          dangerouslySetInnerHTML={{ __html: news.formattedSummary }}
+        />
+        {shouldShowToggle && !isExpanded && (
+          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent" />
+        )}
+      </div>
       
       <div className="flex justify-between items-center mt-4">
         {shouldShowToggle && (

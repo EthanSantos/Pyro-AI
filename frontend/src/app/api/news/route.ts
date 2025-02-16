@@ -184,13 +184,15 @@ Residents are able to call 211 for information regarding shelters, and social an
   };
 
   const westwoodShelter: EvacShelter = {
-    id: 40397,
-    name: "Westwood Recreation Center",
-    address: "1350 S Sepulveda Blvd, Los Angeles, CA 90025",
-    information: "",
-    lat: 34.0507,
-    lng: -118.4363,
-    date_created: "2025-01-08T06:01:28Z",
+    id: 40348,
+    name: "Evacuation Shelter - Westwood Recreation Center",
+    address: "1350 S Sepulveda Blvd, Los Angeles, CA 90025, USA",
+    information: `An Evacuation Shelter is located at Westwood Recreation Center, per LAFD. Small animals are accepted. Residents may remain overnight.
+
+LADWP will be distributing bottled water to affected customers at the Westwood Recreation Center. The distribution is open 24 hours in coordination with American Red Cross.`,
+    lat: 34.0532429,
+    lng: -118.4484711,
+    date_created: "2025-01-07T20:23:05Z",
     regions: [{
       id: 22,
       display_name: "Los Angeles County",
