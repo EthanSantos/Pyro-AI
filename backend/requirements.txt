@@ -4,3 +4,7 @@ Pillow
 requests
 python-dotenv
 onnxruntime
+numpy
+
+opencv-python
+ultralytics
