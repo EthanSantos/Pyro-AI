@@ -17,19 +17,19 @@ const TAB_CONFIGS: TabConfig[] = [
   {
     value: 'alerts',
     icon: Bell,
-    label: 'Alerts',
+    label: 'ALERTS',
     component: <AlertsTab />,
   },
   {
     value: 'routes',
     icon: Route,
-    label: 'Routes',
+    label: 'ROUTES',
     component: <RoutesTab />,
   },
   {
     value: 'chat',
     icon: MessageSquare,
-    label: 'Chat',
+    label: 'CHAT',
     component: <ChatTab />,
   },
 ];

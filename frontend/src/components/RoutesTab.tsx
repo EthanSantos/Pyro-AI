@@ -307,7 +307,7 @@ const RoutesTab: React.FC = () => {
   const secondsToMinutes = (s: number) => Math.round(s / 60)
 
   return (
-    <UnifiedTabContent header={<h2 className="text-lg font-semibold">Routes</h2>}>
+    <UnifiedTabContent header={<h2 className="text-lg font-semibold">ROUTES</h2>}>
       <Card className="p-6 mb-6 shadow-sm">
         <CardHeader className="px-0 pt-0">
           <CardTitle className="flex items-center gap-2 text-sm">
@@ -366,7 +366,7 @@ const RoutesTab: React.FC = () => {
             >
               {loading ? (
                 <span className="flex items-center gap-2">
-                  <Loader2 className="animate-spin w-4 h-4" /> Searching...
+                  <Loader2 className="animate-spin w-4 h-4" /> Finding...
                 </span>
               ) : (
                 "Go"

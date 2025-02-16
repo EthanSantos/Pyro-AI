@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Map, Newspaper, Settings } from "lucide-react";
+import Image from "next/image"; // Import Next.js Image component
 
 const navItems = [
   { name: "HOME", href: "/", icon: Home },
@@ -17,7 +18,17 @@ export default function NavigationBar() {
     <div className="h-screen w-64 flex flex-col border-r border-gray-100 bg-white">
       {/* Logo / Header */}
       <div className="px-6 py-5 mb-1">
-        <span className="text-xl font-semibold text-gray-900">PYRO.AI</span>
+        <div className="flex items-center gap-3">
+          {/* Logo Image */}
+          <Image
+            src="/pyro-ai-logo.svg" // Path to your SVG in the public folder
+            alt="Pyro AI Logo"
+            width={32} // Adjust the size as needed
+            height={32}
+          />
+          {/* Title */}
+          <span className="text-xl font-semibold text-gray-900">PYRO.AI</span>
+        </div>
         <hr className="mt-3 border-gray-200" />
       </div>
 
@@ -55,7 +66,7 @@ export default function NavigationBar() {
       <div className="p-4 mt-auto border-t border-gray-100">
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
-            <span className="text-sm text-gray-600">JD</span>
+            <span className="text-sm text-gray-600">A</span>
           </div>
         </div>
       </div>
