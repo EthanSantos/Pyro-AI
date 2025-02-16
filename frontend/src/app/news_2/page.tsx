@@ -5,6 +5,8 @@ import NewsCard from "@/components/ui/NewsCard"
 import { Button } from "@/components/ui/button"
 import { FaSearch } from "react-icons/fa"
 import { Input } from "@/components/ui/input"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 function SearchNews({setSubmittedQuery} : {setSubmittedQuery: React.SetStateAction<any>}) {  
   const [isFocused, setIsFocused] = useState<Boolean>(false)
@@ -47,6 +49,19 @@ function FilterBar({setFilter} : {setFilter: Function}) {
   )
 }
 
+interface NewsItem {
+  id: number;
+  title: string;
+  summary: string;
+  category: string;
+  source: string;
+  time: string;
+  imageUrl: string | null;
+  isNew: boolean;
+  embedUrl: string | null;
+  formattedSummary: string;
+}
+
 export default function Home() {
 
   const allNews = [
@@ -79,10 +94,48 @@ export default function Home() {
     },
   ]
 
-  // Filter results based on selected tag.
+  const [loading, setLoading] = useState(true);
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [filter, setFilter] = useState<String>("All")
   const [displayedNews, setDisplayedNews] = useState<Array<{id: number, title: String, tag: String, source: String, date: String, content: String, link: String}>>(allNews)
+  const [submittedQuery, setSubmittedQuery] = useState<any>("")
 
+  const filters = ["All", "Alerts", "Evacuations", "Weather", "General"]
+
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+
+    async function fetchData() {
+      try {
+        const response = await fetch('/api/news');
+        const data = await response.json();
+        
+        if (data.success) {
+          setNewsItems(prev => {
+            const newItems = data.news.filter(
+              (item: NewsItem) => !prev.some(p => p.id === item.id)
+            );
+            return [...newItems, ...prev];
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching news:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+    intervalId = setInterval(fetchData, 5 * 60 * 1000);
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, []);
+  
+  // Filter results based on selected tag.
   useEffect(() => {
     if (filter !== "All") {
       const filteredNews = allNews.filter((news) => news.tag === filter)
@@ -93,8 +146,6 @@ export default function Home() {
   }, [filter])
 
   // Filter results by title and content as input is typed in search bar.
-  const [submittedQuery, setSubmittedQuery] = useState<any>("")
-
   useEffect(() => {
     if(submittedQuery){
       const filteredNews : Array<{id: number, title: String, tag: String, source: String, date: String, content: String, link: String}> = allNews.filter((news) => (news.title.toLowerCase().includes(submittedQuery.toLowerCase())))
@@ -105,6 +156,21 @@ export default function Home() {
     }
   }, [submittedQuery])
 
+  if (loading) {
+    return(
+      <div className="min-h-screen flex flex-col items-start justify-start p-8 space-y-4">
+        <div className="flex items-center justify-between w-full">
+          <h1 className="text-3xl font-bold">Wildfire News & Updates</h1>
+          <SearchNews setSubmittedQuery={setSubmittedQuery}/>
+        </div>
+
+        <div>
+          <FilterBar setFilter={setFilter}/>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-start justify-start p-8 space-y-4">
       <div className="flex items-center justify-between w-full">
@@ -112,21 +178,38 @@ export default function Home() {
         <SearchNews setSubmittedQuery={setSubmittedQuery}/>
       </div>
 
-      <div>
-       <FilterBar setFilter={setFilter}/>
-      </div>
+      <Tabs defaultValue="All" className="w-full">
+        <TabsList
+          className="bg-[#DD5A2B] text-white"
+        >
+          {filters.map((filter) => (
+            <TabsTrigger
+              key={filter}
+              value={filter}
+              onClick={() => setFilter(filter)}
+              className="data-[state=active]:bg-[#faded4]"
+            >
+              {filter}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
-      {displayedNews.map((news) => (
-        <NewsCard
-          key={news.id}
-          title={news.title}
-          tag={news.tag}
-          source={news.source}
-          date={news.date}
-          content={news.content}
-          link={news.link}
-        />
-      ))}
+      <ScrollArea className="h-[calc(100vh-220px)] w-full">
+        <div className="space-y-4 pr-4">
+          {displayedNews.map((news) => (
+            <NewsCard
+              key={news.id}
+              title={news.title}
+              tag={news.tag}
+              source={news.source}
+              date={news.date}
+              content={news.content}
+              link={news.link}
+            />
+          ))}
+        </div>
+      </ScrollArea>
 
     </div>
   )
