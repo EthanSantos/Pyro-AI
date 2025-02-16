@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Map, Settings } from "lucide-react";
+import { Home, Map, Newspaper, Settings } from "lucide-react";
 
 const navItems = [
   { name: "Home", href: "/", icon: Home },
   { name: "Dashboard", href: "/dashboard", icon: Map },
   { name: "Settings", href: "/settings", icon: Settings },
+  { name: "News", href: "/news", icon: Newspaper },
 ];
 
 export default function NavigationBar() {
