@@ -70,3 +70,33 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+.animate-gradient {
+  animation: gradient 3s linear infinite;
+  background: linear-gradient(
+    to right,
+    #dc2626 0%,    /* red-600 */
+    #f97316 30%,   /* orange-500 */
+    #facc15 60%,   /* yellow-400 */
+    #fef3c7 70%,   /* very light yellow/white */
+    #f97316 85%,   /* back to orange */
+    #dc2626 100%   /* back to red */
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bg-300\% {
+  background-size: 200% auto;
+}
