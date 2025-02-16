@@ -13,6 +13,10 @@ CORS(app)
 # load the model
 model = tf.keras.models.load_model('models/wildfire_cnn.keras')
 
+@app.route('/', methods=['GET'])
+def index():
+    return "Flask server up and running :)"
+
 def download_and_process_image(image_url):
     """Download satellite image from URL and preprocess it"""
     response = requests.get(image_url)
@@ -64,5 +68,9 @@ def handle_error(error):
     app.logger.error(f"Unhandled error: {str(error)}")
     return jsonify({"error": "Internal server error"}), 500
 
+# Expose the Flask app as the WSGI callable for Vercel
+application = app
+
+# Optionally run locally if executed directly
 if __name__ == '__main__':
     app.run(debug=True)
