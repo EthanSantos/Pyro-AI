@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExternalLink, Bookmark, BookmarkCheck } from "lucide-react";
+import { EvacShelterCard } from './EvacShelterCard';
+import { Input } from "@/components/ui/input";
 
-const categories = ["All", "Alerts", "Evacuations", "Weather", "General"];
+const categories = ["All", "Alerts", "General", "Shelters"];
 
 interface NewsItem {
   id: number;
@@ -20,11 +22,40 @@ interface NewsItem {
   imageUrl: string | null;
   isNew: boolean;
   embedUrl: string | null;
+  formattedSummary: string;
+}
+
+interface EvacShelter {
+  id: number;
+  name: string;
+  address: string;
+  information: string;
+  lat: number;
+  lng: number;
+  date_created: string;
+  regions: Region[];
+  evacZoneStatuses: string[];
+}
+
+interface Region {
+  id: number;
+  display_name: string;
+  state: string;
+  evac_zone_style: string;
 }
 
 const NewsCard = ({ news }: { news: NewsItem }) => {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [shouldShowToggle, setShouldShowToggle] = useState(false);
+  const maxHeight = 200; // Maximum height in pixels before showing toggle
+
+  useEffect(() => {
+    if (contentRef.current) {
+      setShouldShowToggle(contentRef.current.scrollHeight > maxHeight);
+    }
+  }, [news.formattedSummary]);
 
   return (
     <Card className={`p-4 glass-card relative ${news.isNew ? 'animate-fade-in' : ''}`}>
@@ -42,18 +73,23 @@ const NewsCard = ({ news }: { news: NewsItem }) => {
         </div>
       </div>
 
-      <p className={`mt-2 text-sm ${isExpanded ? '' : 'line-clamp-3'}`}>
-        {news.summary}
-      </p>
+      <div 
+        ref={contentRef}
+        className={`mt-2 text-sm overflow-hidden transition-all duration-200`}
+        style={{ maxHeight: isExpanded ? `${contentRef.current?.scrollHeight}px` : `${maxHeight}px` }}
+        dangerouslySetInnerHTML={{ __html: news.formattedSummary }}
+      />
       
       <div className="flex justify-between items-center mt-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          {isExpanded ? "Show less" : "Read more"}
-        </Button>
+        {shouldShowToggle && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+          >
+            {isExpanded ? "Show less" : "Read more"}
+          </Button>
+        )}
         {news.embedUrl && (
           <Button variant="ghost" size="icon" asChild>
             <a href={news.embedUrl} target="_blank" rel="noopener noreferrer">
@@ -70,23 +106,25 @@ export default function NewsSection() {
   const [activeCategory, setActiveCategory] = useState("All");
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [shelters, setShelters] = useState<EvacShelter[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
 
-    async function fetchNews() {
+    async function fetchData() {
       try {
         const response = await fetch('/api/news');
         const data = await response.json();
         
         if (data.success) {
           setNewsItems(prev => {
-            // Combine new items with existing ones, avoiding duplicates
             const newItems = data.news.filter(
               (item: NewsItem) => !prev.some(p => p.id === item.id)
             );
             return [...newItems, ...prev];
           });
+          setShelters(data.shelters);
         }
       } catch (error) {
         console.error('Error fetching news:', error);
@@ -95,23 +133,24 @@ export default function NewsSection() {
       }
     }
 
-    // Fetch immediately
-    fetchNews();
-    
-    // Then set up the interval for subsequent fetches
-    intervalId = setInterval(fetchNews, 5 * 60 * 1000); // Poll every 5 minutes
+    fetchData();
+    intervalId = setInterval(fetchData, 5 * 60 * 1000);
 
-    // Cleanup on unmount
     return () => {
       if (intervalId) {
         clearInterval(intervalId);
       }
     };
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
 
   const filteredNews = activeCategory === "All"
     ? newsItems
     : newsItems.filter(news => news.category === activeCategory);
+
+  const filteredShelters = shelters.filter(shelter => 
+    (shelter.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (shelter.address?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+  );
 
   if (loading) {
     return <div>Loading news updates...</div>;
@@ -133,11 +172,26 @@ export default function NewsSection() {
         </TabsList>
       </Tabs>
 
+      {activeCategory === "Shelters" && (
+        <Input
+          placeholder="Search shelters by name or location..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="max-w-md"
+        />
+      )}
+
       <ScrollArea className="h-[calc(100vh-220px)]">
         <div className="space-y-4 pr-4">
-          {filteredNews.map(news => (
-            <NewsCard key={news.id} news={news} />
-          ))}
+          {activeCategory === "Shelters" ? (
+            filteredShelters.map(shelter => (
+              <EvacShelterCard key={shelter.id} shelter={shelter} />
+            ))
+          ) : (
+            filteredNews.map(news => (
+              <NewsCard key={news.id} news={news} />
+            ))
+          )}
         </div>
       </ScrollArea>
     </div>
