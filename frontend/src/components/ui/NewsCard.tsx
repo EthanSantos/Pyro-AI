@@ -15,9 +15,9 @@ const NewsCard = (
     {title: String, tag: String, source: String, date: String, content: String, link: String}
 ) => {
     return(
-        <Card>
-            <CardHeader>
-                <CardTitle>{title}</CardTitle>
+        <Card className="min-w-full">
+            <CardHeader className="pb-4">
+                <CardTitle className="text-xl pb-1">{title}</CardTitle>
                 <div className="flex items-center space-x-2">
                     <Badge variant="outline">{tag}</Badge>
                     <CardDescription>{source}</CardDescription>
@@ -26,11 +26,11 @@ const NewsCard = (
                 </div>
             </CardHeader>
 
-            <CardContent>
+            <CardContent className="w-[95%] pb-4 text-sm">
                 <p>{content}</p>
             </CardContent>
 
-            <CardFooter>
+            <CardFooter className="items-start justify-end">
                 <SquareArrowOutUpRight /> {/** TODO: Make this icon clickable + link it to website with more info. */}
             </CardFooter>
         </Card>
