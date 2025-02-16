@@ -6,11 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ExternalLink, Bookmark, BookmarkCheck } from "lucide-react";
+import { ExternalLink, Bookmark, BookmarkCheck, MapPin } from "lucide-react";
 import { EvacShelterCard } from './EvacShelterCard';
 import { Input } from "@/components/ui/input";
 
-const categories = ["All", "Alerts", "General", "Shelters"];
+const categories = ["Alerts", "Evacuations", "Weather", "General"];
 
 interface NewsItem {
   id: number;
@@ -88,7 +88,7 @@ const NewsCard = ({ news }: { news: NewsItem }) => {
       <div className="flex justify-between items-center mt-4">
         {shouldShowToggle && (
           <Button
-            variant="ghost"
+            variant="default"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
           >
@@ -96,7 +96,11 @@ const NewsCard = ({ news }: { news: NewsItem }) => {
           </Button>
         )}
         {news.embedUrl && (
-          <Button variant="ghost" size="icon" asChild>
+          <Button
+            variant="default"
+            size="sm"
+            asChild
+          >
             <a href={news.embedUrl} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="h-4 w-4" />
             </a>
@@ -108,7 +112,7 @@ const NewsCard = ({ news }: { news: NewsItem }) => {
 };
 
 export default function NewsSection() {
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeCategory, setActiveCategory] = useState("General");
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [shelters, setShelters] = useState<EvacShelter[]>([]);
@@ -148,9 +152,11 @@ export default function NewsSection() {
     };
   }, []);
 
-  const filteredNews = activeCategory === "All"
-    ? newsItems
-    : newsItems.filter(news => news.category === activeCategory);
+  const filteredNews = activeCategory === "Alerts" 
+    ? newsItems.filter(news => news.category === "Alerts")
+    : activeCategory === "Shelters" 
+      ? [] 
+      : newsItems; // Show all news items in "General" by default
 
   const filteredShelters = shelters.filter(shelter => 
     (shelter.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
@@ -163,13 +169,17 @@ export default function NewsSection() {
 
   return (
     <div className="space-y-4">
-      <Tabs defaultValue="All" className="w-full">
+      <Tabs 
+        defaultValue="General" 
+        value={activeCategory}
+        onValueChange={setActiveCategory}
+        className="w-full"
+      >
         <TabsList>
           {categories.map(category => (
             <TabsTrigger
               key={category}
               value={category}
-              onClick={() => setActiveCategory(category)}
             >
               {category}
             </TabsTrigger>

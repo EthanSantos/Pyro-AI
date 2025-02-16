@@ -34,11 +34,11 @@ function SearchNews({setSubmittedQuery} : {setSubmittedQuery: React.SetStateActi
 export default function Home() {
   const [loading, setLoading] = useState(true);
   const [allNews, setAllNews] = useState<NewsItem[]>([]);
-  const [filter, setFilter] = useState<String>("All")
+  const [filter, setFilter] = useState<String>("General")
   const [displayedNews, setDisplayedNews] = useState<NewsItem[]>([])
   const [submittedQuery, setSubmittedQuery] = useState<any>("")
 
-  const filters = ["All", "Alerts", "Evacuations", "Weather", "General"]
+  const filters = ["General", "Alerts", "Evacuations", "Weather"]
 
   useEffect(() => {
     let intervalId: NodeJS.Timeout;
@@ -75,24 +75,31 @@ export default function Home() {
   
   // Filter results based on selected tag.
   useEffect(() => {
-    if (filter !== "All") {
-      const filteredNews = allNews.filter((news) => news.category === filter)
-      setDisplayedNews(filteredNews)
+    if (submittedQuery) {
+      const searchQuery = submittedQuery.toLowerCase();
+      const filteredNews = allNews.filter((news) => 
+        news.title.toLowerCase().includes(searchQuery) || 
+        news.summary.toLowerCase().includes(searchQuery) ||
+        news.source.toLowerCase().includes(searchQuery)
+      );
+      
+      // Apply category filter to search results if not in General
+      if (filter !== "General") {
+        const categoryFiltered = filteredNews.filter(news => news.category === filter);
+        setDisplayedNews(categoryFiltered);
+      } else {
+        setDisplayedNews(filteredNews);
+      }
     } else {
-      setDisplayedNews(allNews)
+      // When search is empty, show category filtered results
+      if (filter === "General") {
+        setDisplayedNews(allNews);
+      } else {
+        const filteredNews = allNews.filter((news) => news.category === filter);
+        setDisplayedNews(filteredNews);
+      }
     }
-  }, [filter])
-
-  // Filter results by title and content as input is typed in search bar.
-  useEffect(() => {
-    if(submittedQuery){
-      const filteredNews : NewsItem[] = allNews.filter((news) => (news.title.toLowerCase().includes(submittedQuery.toLowerCase())))
-      setDisplayedNews(filteredNews)
-    }
-    else {
-      setDisplayedNews(allNews)
-    }
-  }, [submittedQuery])
+  }, [submittedQuery, filter, allNews]);
 
   if (loading) {
     return(
@@ -102,7 +109,7 @@ export default function Home() {
           <SearchNews setSubmittedQuery={setSubmittedQuery}/>
         </div>
 
-        <Tabs defaultValue="All" className="w-full">
+        <Tabs defaultValue="General" className="w-full">
           <TabsList
             className="bg-[#DD5A2B] text-white"
           >
@@ -129,7 +136,7 @@ export default function Home() {
         <SearchNews setSubmittedQuery={setSubmittedQuery}/>
       </div>
 
-      <Tabs defaultValue="All" className="w-full">
+      <Tabs defaultValue="General" className="w-full">
         <TabsList
           className="bg-[#DD5A2B] text-white"
         >
