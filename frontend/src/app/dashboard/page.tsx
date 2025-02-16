@@ -133,9 +133,11 @@ export default function Dashboard() {
     >
       <div className="flex flex-col h-screen bg-white text-gray-800">
         {/* Page Header */}
-        <header className="flex-none p-4 border-b border-gray-200">
+        <header className="flex items-center justify-between p-4 border-b border-gray-200">
           <h1 className="text-xl font-bold">WILDFIRE MONITORING DASHBOARD</h1>
+          <span className="text-sm text-gray-500">1/24/2025</span>
         </header>
+
 
         {/* Main Content */}
         <div className="flex-1 flex min-h-0 bg-slate-100">
