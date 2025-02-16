@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-orange-900">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-orange-900">
       {/* Navigation */}
       <nav className="p-4">
         <div className="container mx-auto flex justify-between items-center">
@@ -36,8 +36,7 @@ export default function Home() {
           </p>
           <Link href="/dashboard">
             <Button 
-              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-6 text-lg rounded-lg
-                        transform transition hover:scale-105 shadow-lg"
+              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-6 text-lg rounded-lg transform transition hover:scale-105 shadow-lg"
             >
               Get Started →
             </Button>
