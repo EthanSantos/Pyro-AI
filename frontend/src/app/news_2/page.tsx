@@ -86,7 +86,7 @@ export default function Home() {
   // Filter results by title and content as input is typed in search bar.
   useEffect(() => {
     if(submittedQuery){
-      const filteredNews : Array<{id: number, title: String, tag: String, source: String, date: String, content: String, link: String}> = allNews.filter((news) => (news.title.toLowerCase().includes(submittedQuery.toLowerCase())))
+      const filteredNews : NewsItem[] = allNews.filter((news) => (news.title.toLowerCase().includes(submittedQuery.toLowerCase())))
       setDisplayedNews(filteredNews)
     }
     else {
