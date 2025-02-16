@@ -1,4 +1,3 @@
-// src/components/panels/tabs/chat-tab.tsx
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Input } from './ui/input';
@@ -8,6 +7,8 @@ import { Mic, Send, HelpCircle } from "lucide-react";
 import UnifiedTabContent from './UnifiedTabContent';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ScrollArea } from "./ui/scroll-area";
+import { useWildfireContext } from "@/context/WildfireContext";
+import { getLocationDetails } from '@/utils/getLocationDetails';
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GOOGLE_API_KEY!);
@@ -70,7 +71,7 @@ const TypewriterMarkdown = ({ text }: { text: string }) => {
             if (index === text.length) {
                 clearInterval(interval);
             }
-        }, 10); // fast typewriter effect (20ms per character)
+        }, 10);
         return () => clearInterval(interval);
     }, [text]);
 
@@ -101,11 +102,9 @@ const ChatMessage = ({ message, isUser }: ChatMessageProps) => (
             }`}
     >
         <div className="text-sm">
-            {/* If the AI message is "THINKING", render animated dots */}
-            {!isUser && message === "THINKING" ? (
+            {(!isUser && message === "THINKING") ? (
                 <AnimatedDots />
             ) : (
-                // For AI messages (non-user), render typewriter effect with markdown
                 !isUser ? <TypewriterMarkdown text={message} /> : message
             )}
         </div>
@@ -167,6 +166,7 @@ const ChatTab = () => {
         },
     ]);
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
+    const { safetyScore, riskValue, userCoordinates, fireData } = useWildfireContext();
 
     // Scroll to the bottom when messages update.
     const scrollToBottom = () => {
@@ -178,7 +178,6 @@ const ChatTab = () => {
     }, [messages]);
 
     const handleSend = async (userMessage: string) => {
-        // Add user's message.
         setMessages(prev => [
             ...prev,
             {
@@ -189,7 +188,6 @@ const ChatTab = () => {
             }
         ]);
 
-        // Insert a "Thinking" bubble.
         const thinkingId = `thinking-${Date.now()}`;
         setMessages(prev => [
             ...prev,
@@ -202,12 +200,25 @@ const ChatTab = () => {
         ]);
 
         try {
-            // Get Gemini response.
-            const prompt = `As a wildfire expert, answer concisely: ${userMessage}`;
+            // Build context info from the wildfire state
+            const locationDetails = userCoordinates
+                ? await getLocationDetails(userCoordinates)
+                : "Unknown location";
+
+            const contextInfo = `
+                Safety Score: ${safetyScore !== null ? safetyScore : "N/A"} out of 100.
+                Wildfire Risk Level: ${riskValue}
+                User Coordinates: ${userCoordinates ? userCoordinates.join(", ") : "N/A"}
+                Location Details: ${locationDetails}
+                Nearby Fires: ${fireData.map((fire: any) => fire.Name).join(", ")}
+            `;
+            const prompt = `You are a wildfire expert. Based on the following context: ${contextInfo} Answer concisely: ${userMessage}`;
+
+            console.log(prompt)
+
             const result = await model.generateContent(prompt);
             const response = await result.response.text();
 
-            // Replace the "THINKING" bubble with Gemini's response.
             setMessages(prev =>
                 prev.map(msg =>
                     msg.id === thinkingId
@@ -217,7 +228,6 @@ const ChatTab = () => {
             );
         } catch (error) {
             console.error("Gemini API error:", error);
-            // Update the "THINKING" bubble with an error message.
             setMessages(prev =>
                 prev.map(msg =>
                     msg.id === thinkingId

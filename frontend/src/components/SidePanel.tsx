@@ -1,4 +1,3 @@
-// src/components/panels/side-panel.tsx
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";

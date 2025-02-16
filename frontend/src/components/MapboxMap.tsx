@@ -140,6 +140,7 @@ interface MapboxMapProps {
   zoom?: number;
   onRiskChange?: (risk: string) => void;
   onSafetyScoreChange?: (score: number) => void;
+  onCoordinatesChange?: (coords: [number, number]) => void;
 }
 
 // Main Component
@@ -150,6 +151,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   zoom = 12,
   onRiskChange,
   onSafetyScoreChange,
+  onCoordinatesChange,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [selectedLocation, setSelectedLocation] = useState<[number, number]>(
@@ -245,6 +247,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         const { lng, lat } = marker.getLngLat();
         const newCoords: [number, number] = [lng, lat];
         setSelectedLocation(newCoords);
+        onCoordinatesChange?.(newCoords);
         fetchSatelliteImageAndPredict(newCoords);
         computeSafetyScore(newCoords);
       });
@@ -252,6 +255,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
       // Initialize with default location
       fetchSatelliteImageAndPredict(selectedLocation);
       computeSafetyScore(selectedLocation);
+      onCoordinatesChange?.(selectedLocation);
     });
 
     return () => map.remove();
