@@ -4,3 +4,9 @@ tensorflow
 numpy
 Pillow
 requests
+opencv-python
+ultralytics
+mapbox-gl
+turf
+opencv-python-headless
+gunicorn
