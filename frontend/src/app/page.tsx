@@ -1,9 +1,10 @@
-"use client";
+"use client"
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function Home() {
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-orange-900">
       {/* Navigation */}
@@ -67,5 +68,5 @@ export default function Home() {
         </div>
       </div>
     </div>
-  );
+  )
 }
