@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import NewsCard from "@/components/ui/NewsCard"
-import { Button } from "@/components/ui/button"
+import NewsCard from "@/app/news_2/NewsCard"
 import { FaSearch } from "react-icons/fa"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { NewsItem } from "@/app/news_2/NewsCard"
 
 function SearchNews({setSubmittedQuery} : {setSubmittedQuery: React.SetStateAction<any>}) {  
   const [isFocused, setIsFocused] = useState<Boolean>(false)
@@ -31,73 +31,11 @@ function SearchNews({setSubmittedQuery} : {setSubmittedQuery: React.SetStateActi
   )
 }
 
-function FilterBar({setFilter} : {setFilter: Function}) {
-  const filters = ["All", "Alerts", "Evacuations", "Weather", "General"]
-
-  return(
-    <div className="min-w-auto border rounded-md space-x-4 p-1 mb-6">
-      {filters.map((filter) => (
-        <Button
-          key={filter}
-          size='sm'
-          onClick={() => setFilter(filter)}
-        >
-          {filter}
-        </Button>
-      ))}
-    </div>
-  )
-}
-
-interface NewsItem {
-  id: number;
-  title: string;
-  summary: string;
-  category: string;
-  source: string;
-  time: string;
-  imageUrl: string | null;
-  isNew: boolean;
-  embedUrl: string | null;
-  formattedSummary: string;
-}
-
 export default function Home() {
-
-  const allNews = [
-    {
-      id: 1,
-      title: "New Evacuation Orders Issued for Northern California",
-      tag: "Evacuations",
-      source: "CalFire",
-      date: "5 minutes ago",
-      content: "Mandatory evacuations have been ordered for residents in the Paradise Pine area due to rapidly spreading wildfire.",
-      link: "https://example.com/wildfire.jpg",
-    },
-    {
-      id: 2,
-      title: "High Wind Advisory: Increased Fire Risk",
-      tag: "Weather",
-      source: "National Weather Service",
-      date: "30 minutes ago",
-      content: "Weather service warns of strong winds up to 45mph, creating dangerous fire conditions in affected areas.",
-      link: "https://www.google.com/search?q=pigs&rlz=1C5CHFA_enUS973US973&oq=pigs&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIGCAEQRRg8MgYIAhBFGDzSAQc1MTNqMGo3qAIIsAIB&sourceid=chrome&ie=UTF-8#vhid=NxbLQ-iqV2JCnM&vssid=l",
-    },
-    {
-      id: 3,
-      title: "Fire Containment Reaches 45% in Sierra Forest",
-      tag: "General",
-      source: "US Forest Service",
-      date: "2 hours ago",
-      content: "Firefighters make progress containing the wildfire that has burned over 5,000 acres.",
-      link: "https://example.com/containment.jpg",
-    },
-  ]
-
   const [loading, setLoading] = useState(true);
-  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+  const [allNews, setAllNews] = useState<NewsItem[]>([]);
   const [filter, setFilter] = useState<String>("All")
-  const [displayedNews, setDisplayedNews] = useState<Array<{id: number, title: String, tag: String, source: String, date: String, content: String, link: String}>>(allNews)
+  const [displayedNews, setDisplayedNews] = useState<NewsItem[]>([])
   const [submittedQuery, setSubmittedQuery] = useState<any>("")
 
   const filters = ["All", "Alerts", "Evacuations", "Weather", "General"]
@@ -111,7 +49,7 @@ export default function Home() {
         const data = await response.json();
         
         if (data.success) {
-          setNewsItems(prev => {
+          setAllNews(prev => {
             const newItems = data.news.filter(
               (item: NewsItem) => !prev.some(p => p.id === item.id)
             );
@@ -138,7 +76,7 @@ export default function Home() {
   // Filter results based on selected tag.
   useEffect(() => {
     if (filter !== "All") {
-      const filteredNews = allNews.filter((news) => news.tag === filter)
+      const filteredNews = allNews.filter((news) => news.category === filter)
       setDisplayedNews(filteredNews)
     } else {
       setDisplayedNews(allNews)
@@ -164,9 +102,22 @@ export default function Home() {
           <SearchNews setSubmittedQuery={setSubmittedQuery}/>
         </div>
 
-        <div>
-          <FilterBar setFilter={setFilter}/>
-        </div>
+        <Tabs defaultValue="All" className="w-full">
+          <TabsList
+            className="bg-[#DD5A2B] text-white"
+          >
+            {filters.map((filter) => (
+              <TabsTrigger
+                key={filter}
+                value={filter}
+                onClick={() => setFilter(filter)}
+                className="data-[state=active]:bg-[#faded4]"
+              >
+                {filter}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </div>
     )
   }
@@ -198,15 +149,7 @@ export default function Home() {
       <ScrollArea className="h-[calc(100vh-220px)] w-full">
         <div className="space-y-4 pr-4">
           {displayedNews.map((news) => (
-            <NewsCard
-              key={news.id}
-              title={news.title}
-              tag={news.tag}
-              source={news.source}
-              date={news.date}
-              content={news.content}
-              link={news.link}
-            />
+            <NewsCard key={news.id} news={news} />
           ))}
         </div>
       </ScrollArea>
