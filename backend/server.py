@@ -170,7 +170,19 @@ def video_feed(video_name):
 @app.errorhandler(Exception)
 def handle_error(error):
     app.logger.error(f"Unhandled error: {str(error)}")
-    return jsonify({"error": "Internal server error"}), 500
+    response = jsonify({"error": "Internal server error"})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
+    return response, 500
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS')
+    return response
+
 
 # Expose the Flask app as the WSGI callable for deployment (e.g., on Vercel)
 application = app
