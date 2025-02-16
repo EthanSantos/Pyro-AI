@@ -9,6 +9,7 @@ import type { FeatureCollection, Feature, Point, Polygon } from "geojson";
 import { useWildfireContext } from "@/context/WildfireContext";
 import { Home } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import VideoFeed from "./VideoFeed"; // Updated import using the new UI
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!;
 
@@ -228,13 +229,74 @@ function createShelterMarkerElement(): HTMLDivElement {
   return el;
 }
 
+/**
+ * Create the popup content for a fire feature.
+ * Added a link to open the video modal.
+ */
 function createFirePopupContent(properties: FireProperties): string {
   return `
-    <h3>${properties.Name}</h3>
-    <p><strong>Location:</strong> ${properties.Location}</p>
-    <p><strong>County:</strong> ${properties.County}</p>
-    <p><strong>Acres Burned:</strong> ${properties.AcresBurned}</p>
-    <p><a href="${properties.Url}" target="_blank">More Info</a></p>
+    <div style="
+      position: relative;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 300px;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: #333;
+      line-height: 1.5;
+    ">
+      <button 
+        onclick="this.closest('.mapboxgl-popup').remove()"
+        style="
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: transparent;
+          border: none;
+          font-size: 24px;
+          font-weight: bold;
+          cursor: pointer;
+          line-height: 1;
+          color: #999;
+        ">
+        &times;
+      </button>
+      <h3 style="
+        margin-top: 0;
+        margin-bottom: 10px;
+        font-size: 20px;
+        line-height: 1.2;
+        color: #222;
+      ">${properties.Name}</h3>
+      <ul style="
+        list-style: none;
+        padding: 0;
+        margin: 10px 0;
+        font-size: 14px;
+      ">
+        <li style="margin-bottom: 5px;"><strong>Location:</strong> ${properties.Location}</li>
+        <li style="margin-bottom: 5px;"><strong>County:</strong> ${properties.County}</li>
+        <li style="margin-bottom: 5px;"><strong>Acres Burned:</strong> ${properties.AcresBurned}</li>
+      </ul>
+      <p style="margin: 10px 0; font-size: 14px;">
+        <a 
+          href="${properties.Url}" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style="text-decoration: none; color: #007BFF;">
+          More Info
+        </a>
+      </p>
+      <p style="margin: 10px 0; font-size: 14px;">
+        <a 
+          href="#" 
+          onclick="openVideoModal()" 
+          style="text-decoration: underline; color: #007BFF;">
+          Watch Video Feed
+        </a>
+      </p>
+    </div>
   `;
 }
 
@@ -272,6 +334,23 @@ function buildCirclePolygons(
   };
 }
 
+// Modal Component for Video Feed
+// Now using the improved VideoFeed component which has its own close button (X) and toggle.
+const VideoModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
+  isOpen,
+  onClose,
+}) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
+      <div className="bg-white rounded shadow-lg w-11/12 max-w-3xl p-4">
+        {/* VideoFeed now handles its own close action via the onClose prop */}
+        <VideoFeed onClose={onClose} />
+      </div>
+    </div>
+  );
+};
+
 // Component Props
 interface MapboxMapProps {
   width?: string;
@@ -301,8 +380,10 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   const [showShelters, setShowShelters] = useState(false);
   const shelterMarkersRef = useRef<mapboxgl.Marker[]>([]);
 
+  const [videoModalOpen, setVideoModalOpen] = useState(false);
   const { routeData } = useWildfireContext();
 
+  // Compute safety score based on distance from fires
   const computeSafetyScore = (coords: [number, number]): number => {
     const R = 2; // danger zone radius in km
     const scores = fireData.features.map((feature) => {
@@ -318,6 +399,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     return score;
   };
 
+  // Fetch satellite image and run prediction via backend
   const fetchSatelliteImageAndPredict = async (coords: [number, number]) => {
     try {
       const [lng, lat] = coords;
@@ -327,27 +409,10 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         ","
       )}]/400x400?access_token=${mapboxgl.accessToken}`;
 
-
-      /*
       const { data } = await axios.post("http://127.0.0.1:5000/api/predict", {
         imageUrl,
         coordinates: coords,
       });
-      */
-
-      console.log(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/predict`)
-
-
-
-      const { data } = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/predict`,
-        {
-          imageUrl,
-          coordinates: coords,
-        }
-      );
-
-
 
       onRiskChange?.(data.risk);
     } catch (error) {
@@ -355,6 +420,12 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
       onRiskChange?.("Error getting prediction");
     }
   };
+
+  // Set up the global function to open the video modal.
+  // This function will be called from the inline popup link.
+  useEffect(() => {
+    (window as any).openVideoModal = () => setVideoModalOpen(true);
+  }, []);
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -374,11 +445,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         new mapboxgl.Marker({ element: createFireMarkerElement() })
           .setLngLat(feature.geometry.coordinates as [number, number])
           .setPopup(
-            new mapboxgl.Popup({ offset: 25 })
-              .setHTML(createFirePopupContent(feature.properties))
+            new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(
+              createFirePopupContent(feature.properties)
+            )
           )
           .addTo(map);
       });
+
 
       // Add fire danger circles
       const fireCirclesData = buildCirclePolygons(fireData.features, 2);
@@ -459,7 +532,9 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
           properties: {},
         };
         if (map.getSource("route")) {
-          (map.getSource("route") as mapboxgl.GeoJSONSource).setData(routeGeoJSON);
+          (map.getSource("route") as mapboxgl.GeoJSONSource).setData(
+            routeGeoJSON
+          );
         } else {
           map.addSource("route", {
             type: "geojson",
@@ -599,6 +674,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         >
           {showShelters ? "Hide Shelters" : "Show Nearest Shelters"}
         </Button>
+      <VideoModal isOpen={videoModalOpen} onClose={() => setVideoModalOpen(false)} />
       </div>
     </>
   );

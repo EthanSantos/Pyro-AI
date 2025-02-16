@@ -31,8 +31,8 @@ export function EvacShelterCard({ shelter, distance }: { shelter: EvacShelter; d
           )}
         </div>
         <Button
-          variant="ghost"
-          size="icon"
+          variant="default"
+          size="sm"
           onClick={(e) => {
             e.stopPropagation();
             window.open(`https://www.google.com/maps/search/?api=1&query=${shelter.lat},${shelter.lng}`);
