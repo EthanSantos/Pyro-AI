@@ -160,15 +160,29 @@ const DirectionsTimeline: React.FC<DirectionsTimelineProps> = ({ steps }) => {
 /* -------------------- Main RoutesTab Component -------------------- */
 
 const RoutesTab: React.FC = () => {
-  const { userCoordinates, setRouteData, routeData } = useWildfireContext()
+  const {
+    userCoordinates,
+    setRouteData,
+    routeData,
+    selectedAddress,
+    setSelectedAddress,
+    shouldAutoSearch,
+    setShouldAutoSearch
+  } = useWildfireContext()
 
   const [addressQuery, setAddressQuery] = useState<string>("")
   const [suggestions, setSuggestions] = useState<any[]>([])
-  const [selectedAddress, setSelectedAddress] = useState<any>(null)
 
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string>("")
   const [warning, setWarning] = useState<string>("")
+
+  useEffect(() => {
+    if (shouldAutoSearch && selectedAddress) {
+      handleFindRoute();
+      setShouldAutoSearch(false);
+    }
+  }, [shouldAutoSearch, selectedAddress]);
 
   useEffect(() => {
     if (addressQuery.length < 3) {
@@ -196,7 +210,7 @@ const RoutesTab: React.FC = () => {
     return () => clearTimeout(t)
   }, [addressQuery])
 
-  const handleFindRoute = async () => {
+  const handleFindRoute = React.useCallback(async () => {
     setError("")
     setWarning("")
     setRouteData(null)
@@ -301,7 +315,7 @@ const RoutesTab: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [userCoordinates, selectedAddress, setRouteData]);
 
   const metersToMiles = (m: number) => (m / 1609.34).toFixed(2)
   const secondsToMinutes = (s: number) => Math.round(s / 60)

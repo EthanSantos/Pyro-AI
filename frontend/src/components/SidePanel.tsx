@@ -5,6 +5,7 @@ import { Bell, Route, MessageSquare } from "lucide-react";
 import AlertsTab from './AlertsTab';
 import RoutesTab from './RoutesTab'; 
 import ChatTab from './ChatTab';
+import { useWildfireContext } from '@/context/WildfireContext';
 
 type TabConfig = {
   value: string;
@@ -35,7 +36,7 @@ const TAB_CONFIGS: TabConfig[] = [
 ];
 
 export function SidePanel() {
-  const [activeTab, setActiveTab] = React.useState<string>(TAB_CONFIGS[0].value);
+  const { activeTab, setActiveTab } = useWildfireContext();
 
   return (
     <Card className="w-full h-full flex flex-col overflow-hidden">

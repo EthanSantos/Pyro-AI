@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from 'react';
+import React, { useState, createContext, useContext } from 'react';
 
 interface WildfireContextType {
   safetyScore: number | null;
@@ -10,7 +10,15 @@ interface WildfireContextType {
   setRiskValue: (risk: string) => void;
   setUserCoordinates: (coords: [number, number]) => void;
   setRouteData: (route: any) => void;
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  selectedAddress: any | null;
+  setSelectedAddress: (address: any) => void;
+  shouldAutoSearch: boolean;
+  setShouldAutoSearch: (flag: boolean) => void;
 }
+
+
 
 const WildfireContext = createContext<WildfireContextType | undefined>(undefined);
 
@@ -25,6 +33,9 @@ export const WildfireProvider: React.FC<{
   setUserCoordinates: (coords: [number, number]) => void;
   setRouteData: (route: any) => void;
   children: React.ReactNode;
+  activeTab?: string;
+  selectedAddress?: any;
+  shouldAutoSearch?: boolean;
 }> = ({
   safetyScore,
   riskValue,
@@ -37,6 +48,9 @@ export const WildfireProvider: React.FC<{
   setRouteData,
   children,
 }) => {
+  const [activeTab, setActiveTab] = useState<string>("alerts");
+  const [selectedAddress, setSelectedAddress] = useState<any>(null);
+  const [shouldAutoSearch, setShouldAutoSearch] = useState<boolean>(false);
   return (
     <WildfireContext.Provider
       value={{
@@ -49,6 +63,12 @@ export const WildfireProvider: React.FC<{
         setRiskValue,
         setUserCoordinates,
         setRouteData,
+        activeTab,
+        setActiveTab,
+        selectedAddress,
+        setSelectedAddress,
+        shouldAutoSearch,
+        setShouldAutoSearch,
       }}
     >
       {children}

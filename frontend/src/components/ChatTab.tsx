@@ -9,6 +9,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ScrollArea } from "./ui/scroll-area";
 import { useWildfireContext } from "@/context/WildfireContext";
 import { getLocationDetails } from '@/utils/getLocationDetails';
+import axios from 'axios';
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GOOGLE_API_KEY!);
@@ -78,7 +79,7 @@ const TypewriterMarkdown = ({ text }: { text: string }) => {
     return <ReactMarkdown>{displayedText}</ReactMarkdown>;
 };
 
-// Sub-components
+// ChatHeader Component
 const ChatHeader = () => (
     <div className="flex items-center justify-between">
         <div>
@@ -96,10 +97,10 @@ const ChatHeader = () => (
     </div>
 );
 
+// ChatMessage Component
 const ChatMessage = ({ message, isUser }: ChatMessageProps) => (
     <div
-        className={`p-3 rounded-lg max-w-[80%] ${isUser ? 'bg-primary text-primary-foreground self-end' : 'bg-muted self-start'
-            }`}
+        className={`p-3 rounded-lg max-w-[80%] ${isUser ? 'bg-primary text-primary-foreground self-end' : 'bg-muted self-start'}`}
     >
         <div className="text-sm">
             {(!isUser && message === "THINKING") ? (
@@ -111,6 +112,7 @@ const ChatMessage = ({ message, isUser }: ChatMessageProps) => (
     </div>
 );
 
+// ChatInput Component
 const ChatInput = ({ onSend }: { onSend: (message: string) => void }) => {
     const [message, setMessage] = React.useState('');
 
@@ -155,8 +157,18 @@ const ChatInput = ({ onSend }: { onSend: (message: string) => void }) => {
     );
 };
 
-// Main Chat Tab Component
+// Main ChatTab Component
 const ChatTab = () => {
+    const {
+        setActiveTab,
+        setSelectedAddress,
+        setShouldAutoSearch,
+        safetyScore,
+        riskValue,
+        userCoordinates,
+        fireData,
+    } = useWildfireContext();
+
     const [messages, setMessages] = React.useState<Message[]>([
         {
             id: '1',
@@ -165,8 +177,8 @@ const ChatTab = () => {
             timestamp: new Date().toISOString()
         },
     ]);
+
     const messagesEndRef = React.useRef<HTMLDivElement>(null);
-    const { safetyScore, riskValue, userCoordinates, fireData } = useWildfireContext();
 
     // Scroll to the bottom when messages update.
     const scrollToBottom = () => {
@@ -178,6 +190,7 @@ const ChatTab = () => {
     }, [messages]);
 
     const handleSend = async (userMessage: string) => {
+        // Add the user's message to the chat
         setMessages(prev => [
             ...prev,
             {
@@ -188,6 +201,7 @@ const ChatTab = () => {
             }
         ]);
 
+        // Add a THINKING placeholder message
         const thinkingId = `thinking-${Date.now()}`;
         setMessages(prev => [
             ...prev,
@@ -199,61 +213,124 @@ const ChatTab = () => {
             }
         ]);
 
+        // Updated regex: optionally match an article ("a" or "an") before route/path.
+        const routeMatch = userMessage.match(/(?:find|show)(?: me)?(?: a safe)?(?: an?)? (?:route|path|directions) to (.+)/i);
+        if (routeMatch) {
+            const query = routeMatch[1].trim();
+            console.log("Destination query:", query);
+
+            try {
+                const response = await axios.get(
+                    `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json`,
+                    {
+                        params: {
+                            access_token: process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN,
+                            limit: 5,              // Increase the limit to get multiple suggestions
+                            autocomplete: true     // Enables autocomplete functionality
+                        },
+                    }
+                );
+
+                console.log("Mapbox response:", response.data);
+
+                if (response.data.features && response.data.features.length > 0) {
+                    // For example, take the first suggestion, or present a list to the user.
+                    const feature = response.data.features[0];
+                    console.log("Selected feature:", feature);
+
+                    // Update your UI/context with the selected feature:
+                    setSelectedAddress(feature);
+                    setActiveTab('routes');
+                    setShouldAutoSearch(true);
+
+                    // Optionally, update your chat message:
+                    setMessages(prev =>
+                        prev.map(msg =>
+                            msg.id === thinkingId
+                                ? { ...msg, content: `Found location: ${feature.place_name}. Switching to routes...`, timestamp: new Date().toISOString() }
+                                : msg
+                        )
+                    );
+                } else {
+                    // Handle no suggestions found
+                    setMessages(prev =>
+                        prev.map(msg =>
+                            msg.id === thinkingId
+                                ? { ...msg, content: `Couldn't find "${query}". Please try a different location.`, timestamp: new Date().toISOString() }
+                                : msg
+                        )
+                    );
+                }
+            } catch (error) {
+                console.error("Geocoding error:", error);
+                setMessages(prev =>
+                    prev.map(msg =>
+                        msg.id === thinkingId
+                            ? { ...msg, content: "Error finding location. Please try again.", timestamp: new Date().toISOString() }
+                            : msg
+                    )
+                );
+            }
+            // Return early so the Gemini AI fallback is not executed
+            return;
+        }
+
+        // Fallback: use the Gemini Generative AI model if no route command was detected.
         try {
-            // Build context info from the wildfire state
             const locationDetails = userCoordinates
                 ? await getLocationDetails(userCoordinates)
                 : "Unknown location";
 
             const prompt = `
-                You are a wildfire safety assistant. Use the following context to answer "How safe am I?" with a brief response (1-2 sentences).
-                
-                Context:
-                - Location: ${locationDetails || "Unknown"}
-                - Coordinates: ${userCoordinates ? userCoordinates.join(", ") : "N/A"}
-                - Active Fires: ${fireData.length} (${fireData.slice(0, 3).map((f: any) => f.Name).join(", ")})
-                - Safety Score: **${safetyScore}/100**
-                - Wildfire Risk: **${riskValue}/100**
-                
-                Instructions:
-                ${safetyScore! < 50 ? `
-                1. Answer the question given the context. If it's like where am I, give the locationDetails and userCoordinates.
-                2. Begin by stating that the low safety score (**${safetyScore}/100**) indicates unsafe conditions.
-                3. Mention the wildfire risk (**${riskValue}**) as an additional factor.
-                4. Provide an urgent safety action tip.
-                ` : `
-                1. Start by mentioning the wildfire risk (**${riskValue}**).
-                2. Refer to the safety score (**${safetyScore}/100**) as a precaution.
-                3. Offer monitoring advice.
-                `}
-                
-                Formatting:
-                - Use bold formatting for numbers (e.g., **like this**).
-                - Avoid combining percentages; explain them separately.
-                
-                Question: ${userMessage}
-                Answer:
-                `;
+You are a wildfire safety assistant. Use the following context to answer "How safe am I?" with a brief response (1-2 sentences).
 
+Context:
+- Location: ${locationDetails || "Unknown"}
+- Coordinates: ${userCoordinates ? userCoordinates.join(", ") : "N/A"}
+- Active Fires: ${fireData.length} (${fireData.slice(0, 3).map((f: any) => f.Name).join(", ")})
+- Safety Score: **${safetyScore}/100**
+- Wildfire Risk: **${riskValue}/100**
 
-            console.log(prompt)
+Instructions:
+${safetyScore! < 50 ? `
+1. Begin by noting that the low safety score (**${safetyScore}/100**) indicates unsafe conditions.
+2. Mention the wildfire risk (**${riskValue}**) and provide an urgent safety tip.
+` : `
+1. Mention the wildfire risk (**${riskValue}**).
+2. Note the safety score (**${safetyScore}/100**) and offer monitoring advice.
+`}
+
+Formatting:
+- Use bold formatting for numbers (e.g., **like this**).
+- Avoid combining percentages; explain them separately.
+
+Question: ${userMessage}
+Answer:
+      `;
+
+            console.log("Generated prompt:", prompt);
 
             const result = await model.generateContent(prompt);
-            const response = await result.response.text();
+            const responseText = await result.response.text();
 
             setMessages(prev =>
                 prev.map(msg =>
                     msg.id === thinkingId
-                        ? { ...msg, content: response, timestamp: new Date().toISOString() }
+                        ? { ...msg, content: responseText, timestamp: new Date().toISOString() }
                         : msg
                 )
             );
-        } catch (error) {
+        } catch (error: any) {
             console.error("Gemini API error:", error);
+            let fallbackMessage = "Sorry, I'm having trouble accessing wildfire information right now.";
+            if (error.message && error.message.includes("SAFETY")) {
+                fallbackMessage = "Sorry, I'm unable to generate a safe response for that query.";
+            }
             setMessages(prev =>
                 prev.map(msg =>
                     msg.id === thinkingId
-                        ? { ...msg, content: "Sorry, I'm having trouble accessing wildfire information right now.", timestamp: new Date().toISOString() } : msg
+                        ? { ...msg, content: fallbackMessage, timestamp: new Date().toISOString() }
+                        : msg
                 )
             );
         }
