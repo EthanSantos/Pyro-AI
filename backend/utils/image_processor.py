@@ -1,10 +1,11 @@
-import tensorflow as tf
+import numpy as np
+from PIL import Image
 
 def preprocess_image(image):
     # resizing to match model's expected input 
     image = image.resize((32, 32))
     
     # converting to array + normalizing
-    img_array = tf.keras.utils.img_to_array(image)
-    img_array = tf.expand_dims(img_array, 0)
-    return img_array / 255.0
+    img_array = np.array(image)
+    img_array = np.expand_dims(img_array, 0)
+    return img_array.astype(np.float32) / 255.0
