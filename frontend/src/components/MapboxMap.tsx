@@ -112,12 +112,68 @@ function createPersonMarkerElement(): HTMLDivElement {
  */
 function createFirePopupContent(properties: FireProperties): string {
   return `
-    <h3>${properties.Name}</h3>
-    <p><strong>Location:</strong> ${properties.Location}</p>
-    <p><strong>County:</strong> ${properties.County}</p>
-    <p><strong>Acres Burned:</strong> ${properties.AcresBurned}</p>
-    <p><a href="${properties.Url}" target="_blank">More Info</a></p>
-    <p><a href="#" onclick="openVideoModal()" style="text-decoration:underline; color:blue;">Watch Video Feed</a></p>
+    <div style="
+      position: relative;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      max-width: 300px;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      color: #333;
+      line-height: 1.5;
+    ">
+      <button 
+        onclick="this.closest('.mapboxgl-popup').remove()"
+        style="
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          background: transparent;
+          border: none;
+          font-size: 24px;
+          font-weight: bold;
+          cursor: pointer;
+          line-height: 1;
+          color: #999;
+        ">
+        &times;
+      </button>
+      <h3 style="
+        margin-top: 0;
+        margin-bottom: 10px;
+        font-size: 20px;
+        line-height: 1.2;
+        color: #222;
+      ">${properties.Name}</h3>
+      <ul style="
+        list-style: none;
+        padding: 0;
+        margin: 10px 0;
+        font-size: 14px;
+      ">
+        <li style="margin-bottom: 5px;"><strong>Location:</strong> ${properties.Location}</li>
+        <li style="margin-bottom: 5px;"><strong>County:</strong> ${properties.County}</li>
+        <li style="margin-bottom: 5px;"><strong>Acres Burned:</strong> ${properties.AcresBurned}</li>
+      </ul>
+      <p style="margin: 10px 0; font-size: 14px;">
+        <a 
+          href="${properties.Url}" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style="text-decoration: none; color: #007BFF;">
+          More Info
+        </a>
+      </p>
+      <p style="margin: 10px 0; font-size: 14px;">
+        <a 
+          href="#" 
+          onclick="openVideoModal()" 
+          style="text-decoration: underline; color: #007BFF;">
+          Watch Video Feed
+        </a>
+      </p>
+    </div>
   `;
 }
 
@@ -247,12 +303,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         new mapboxgl.Marker({ element: createFireMarkerElement() })
           .setLngLat(feature.geometry.coordinates as [number, number])
           .setPopup(
-            new mapboxgl.Popup({ offset: 25 }).setHTML(
+            new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(
               createFirePopupContent(feature.properties)
             )
           )
           .addTo(map);
       });
+
 
       // Add fire danger circles
       const fireCirclesData = buildCirclePolygons(fireData.features, 2);
