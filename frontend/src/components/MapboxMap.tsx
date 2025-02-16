@@ -186,13 +186,14 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         ","
       )}]/400x400?access_token=${mapboxgl.accessToken}`;
 
-      /*
+      
       const { data } = await axios.post("http://127.0.0.1:5000/api/predict", {
         imageUrl,
         coordinates: coords,
       });
-      */
+      
 
+      /*
       const { data } = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/predict`,
         {
@@ -200,6 +201,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
           coordinates: coords,
         }
       );
+
+      */
 
       onRiskChange?.(data.risk);
     } catch (error) {
