@@ -10,23 +10,26 @@ export default function Home() {
       <nav className="p-4">
         <div className="container mx-auto flex justify-end items-center">
           <div className="space-x-6">
-            <Link href="/about" className="text-gray-300 hover:text-orange-400 transition-colors">
+            <Link
+              href="/about"
+              className="text-gray-300 hover:text-orange-400 transition-colors"
+            >
               About Us
             </Link>
-            <Link href="/features" className="text-gray-300 hover:text-orange-400 transition-colors">
+            <Link
+              href="/features"
+              className="text-gray-300 hover:text-orange-400 transition-colors"
+            >
               Features
             </Link>
           </div>
         </div>
       </nav>
 
-
       {/* Hero Section */}
       <div className="container mx-auto px-4 flex items-center min-h-[85vh]">
         <div className="max-w-4xl pl-12">
-          <h1 className="text-6xl font-bold text-white mb-6">
-            Meet PYRO.AI!
-          </h1>
+          <h1 className="text-6xl font-bold text-white mb-6">Meet PYRO.AI!</h1>
           <h2 className="text-7xl font-bold mb-8 animate-gradient tracking-tight">
             Stay Ahead of the Flames
           </h2>
@@ -35,16 +38,19 @@ export default function Home() {
             providing critical updates and personalized evacuation guidance when every moment counts.
           </p>
           <Link href="/dashboard">
-            <Button
-              className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-6 text-lg rounded-lg transform transition hover:scale-105 shadow-lg"
-            >
+            <Button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-6 text-lg rounded-lg transform transition hover:scale-105 shadow-lg">
               Get Started →
             </Button>
           </Link>
         </div>
 
-        {/* MacBook Preview with Screen Content */}
+        {/* MacBook Preview with Glowing Effect */}
         <div className="flex-1 ml-[-10%] scale-[1.50] origin-center mr-[-15%] relative">
+          {/* Glowing effect */}
+          <div
+            className="absolute top-[14%] left-[23.3%] w-[60%] h-[63.7%] bg-orange-500 rounded-2xl blur-3xl opacity-30 z-0"
+            style={{ filter: "blur(60px)" }}
+          />
           {/* Map overlay */}
           <img
             src="/map.jpg"
