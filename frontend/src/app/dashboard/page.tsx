@@ -63,7 +63,7 @@ export default function Dashboard() {
       <div className="flex flex-col h-screen bg-white text-gray-800">
         {/* Page Header */}
         <header className="flex-none p-4 border-b border-gray-200">
-          <h1 className="text-xl font-bold">Wildfire Monitoring Dashboard</h1>
+          <h1 className="text-xl font-bold">WILDFIRE MONITORING DASHBOARD</h1>
         </header>
 
         {/* Main Content */}
@@ -75,7 +75,7 @@ export default function Dashboard() {
               {/* Air Quality Index Card */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Air Quality Index</CardTitle>
+                  <CardTitle className="text-sm font-medium">AIR QUALITY INDEX</CardTitle>
                   <Wind className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -87,7 +87,7 @@ export default function Dashboard() {
               {/* Safety Score Card */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Safety Score</CardTitle>
+                  <CardTitle className="text-sm font-medium">SAFETY SCORE</CardTitle>
                   <Shield className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -101,7 +101,7 @@ export default function Dashboard() {
               {/* Risk Level Card */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Wildfire Risk Level</CardTitle>
+                  <CardTitle className="text-sm font-medium">WILDFIRE RISK LEVEL</CardTitle>
                   <Flame className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>

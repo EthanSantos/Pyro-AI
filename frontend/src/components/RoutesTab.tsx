@@ -310,11 +310,12 @@ const RoutesTab: React.FC = () => {
     <UnifiedTabContent header={<h2 className="text-lg font-semibold">Routes</h2>}>
       <Card className="p-6 mb-6 shadow-sm">
         <CardHeader className="px-0 pt-0">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
             <Navigation className="h-6 w-6 text-blue-500" />
             Find Safe Route
           </CardTitle>
         </CardHeader>
+
         <CardContent className="px-0 pb-0">
           <div className="relative mb-4">
             <Input
