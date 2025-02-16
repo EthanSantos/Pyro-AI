@@ -206,13 +206,31 @@ const ChatTab = () => {
                 : "Unknown location";
 
             const contextInfo = `
-                Safety Score: ${safetyScore !== null ? safetyScore : "N/A"} out of 100.
-                Wildfire Risk Level: ${riskValue}
-                User Coordinates: ${userCoordinates ? userCoordinates.join(", ") : "N/A"}
-                Location Details: ${locationDetails}
-                Nearby Fires: ${fireData.map((fire: any) => fire.Name).join(", ")}
+                Safety Assessment:
+                - Safety Score: ${safetyScore !== null ? `${safetyScore}/100 (${safetyScore < 50 ? 'Unsafe' : 'Moderate Safety'})` : "N/A"}
+                - Wildfire Risk Level: ${riskValue} (${riskValue === "0%" ? "No current fire activity" : "Active fire risk"})
+                Location Context:
+                - Coordinates: ${userCoordinates ? userCoordinates.join(", ") : "N/A"}
+                - Area Details: ${locationDetails}
+                - Nearby Fire Incidents: ${fireData.length > 0 ? fireData.map((fire: any) => fire.Name).join(", ") : "None detected"}
             `;
-            const prompt = `You are a wildfire expert. Based on the following context: ${contextInfo} Answer concisely: ${userMessage}`;
+
+            const prompt = `As a wildfire safety expert, analyze these key factors in order of priority:
+            1. Safety Score interpretation (emphasize scores below 50 as dangerous)
+            2. Risk level context (explain percentage meaning)
+            3. Proximity to active fires
+            4. Location characteristics
+            
+            Current Situation: ${contextInfo}
+            
+            Formulate response with this structure:
+            a. Immediate safety status summary
+            b. Key risk factors explanation
+            c. Specific recommendations
+            
+            User Question: ${userMessage}
+            
+            Maintain urgent tone for scores below 50. Never contradict safety score with risk percentage - explain they measure different factors.`;
 
             console.log(prompt)
 
@@ -231,8 +249,7 @@ const ChatTab = () => {
             setMessages(prev =>
                 prev.map(msg =>
                     msg.id === thinkingId
-                        ? { ...msg, content: "Sorry, I'm having trouble accessing wildfire information right now.", timestamp: new Date().toISOString() }
-                        : msg
+                        ? { ...msg, content: "Sorry, I'm having trouble accessing wildfire information right now.", timestamp: new Date().toISOString() } : msg
                 )
             );
         }
