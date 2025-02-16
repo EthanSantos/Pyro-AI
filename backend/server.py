@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-import tensorflow as tf
+import tflite_runtime.interpreter as tflite
 from PIL import Image
 import requests
 from io import BytesIO
@@ -10,8 +10,13 @@ from utils.image_processor import preprocess_image
 app = Flask(__name__)
 CORS(app)
 
-# load the model
-model = tf.keras.models.load_model('models/wildfire_cnn.keras')
+# Load TFLite model and allocate tensors
+interpreter = tflite.Interpreter(model_path='models/wildfire_cnn.tflite')
+interpreter.allocate_tensors()
+
+# Get input and output tensors
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
 
 @app.route('/', methods=['GET'])
 def index():
@@ -44,9 +49,21 @@ def predict_wildfire_risk():
         print(data['imageUrl'])
         processed_image = download_and_process_image(data['imageUrl'])
         
-        # make prediction
-        prediction = model.predict(processed_image)
-        risk_score = float(prediction[0])
+        # Ensure input data matches the expected shape and type
+        input_shape = input_details[0]['shape']
+        if processed_image.shape != tuple(input_shape):
+            processed_image = np.resize(processed_image, input_shape)
+        
+        # Set input tensor
+        interpreter.set_tensor(input_details[0]['index'], processed_image.astype(np.float32))
+        
+        # Run inference
+        interpreter.invoke()
+        
+        # Get prediction results
+        prediction = interpreter.get_tensor(output_details[0]['index'])
+        risk_score = float(prediction[0][0])  # Assuming single output value
+        
         # Convert risk score to percentage (0-100)
         risk_percentage = int(risk_score * 100)
         
