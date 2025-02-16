@@ -6,11 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ExternalLink, Bookmark, BookmarkCheck, MapPin } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { EvacShelterCard } from './EvacShelterCard';
 import { Input } from "@/components/ui/input";
 
-const categories = ["Alerts", "Evacuations", "Weather", "General"];
+const categories = ["General", "Alerts", "Shelters"];
 
 interface NewsItem {
   id: number;
@@ -37,7 +37,6 @@ interface EvacShelter {
   evacZoneStatuses: string[];
   region: string;
   capacity: number;
-  distance?: number;
 }
 
 interface Region {
@@ -48,17 +47,9 @@ interface Region {
 }
 
 const NewsCard = ({ news }: { news: NewsItem }) => {
-  const [isBookmarked, setIsBookmarked] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  const [shouldShowToggle, setShouldShowToggle] = useState(false);
-  const maxHeight = 100; // Reduced from 200px to 100px
-
-  useEffect(() => {
-    if (contentRef.current) {
-      setShouldShowToggle(contentRef.current.scrollHeight > maxHeight);
-    }
-  }, [news.formattedSummary]);
+  const maxHeight = 100;
 
   return (
     <Card className={`p-4 glass-card relative ${news.isNew ? 'animate-fade-in' : ''}`}>
@@ -83,21 +74,16 @@ const NewsCard = ({ news }: { news: NewsItem }) => {
           style={{ maxHeight: isExpanded ? `${contentRef.current?.scrollHeight}px` : `${maxHeight}px` }}
           dangerouslySetInnerHTML={{ __html: news.formattedSummary }}
         />
-        {shouldShowToggle && !isExpanded && (
-          <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent" />
-        )}
       </div>
       
       <div className="flex justify-between items-center mt-4">
-        {shouldShowToggle && (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? "Show less" : "Read more"}
-          </Button>
-        )}
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          {isExpanded ? "Show less" : "Read more"}
+        </Button>
         {news.embedUrl && (
           <Button
             variant="default"
@@ -117,25 +103,18 @@ const NewsCard = ({ news }: { news: NewsItem }) => {
 export default function NewsSection() {
   const [activeCategory, setActiveCategory] = useState("General");
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [shelters, setShelters] = useState<EvacShelter[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
-
     async function fetchData() {
       try {
         const response = await fetch('/api/news');
         const data = await response.json();
         
         if (data.success) {
-          setNewsItems(prev => {
-            const newItems = data.news.filter(
-              (item: NewsItem) => !prev.some(p => p.id === item.id)
-            );
-            return [...newItems, ...prev];
-          });
+          setNewsItems(data.news);
           setShelters(data.shelters);
         }
       } catch (error) {
@@ -146,50 +125,7 @@ export default function NewsSection() {
     }
 
     fetchData();
-    intervalId = setInterval(fetchData, 5 * 60 * 1000);
-
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
   }, []);
-
-  useEffect(() => {
-    async function fetchShelters() {
-      try {
-        // Fetch shelters for both fire locations
-        const [response1, response2] = await Promise.all([
-          fetch('/api/shelters?lat=32.8622&lng=-117.237'),  // Gilman Fire
-          fetch('/api/shelters?lat=33.708601&lng=-116.964339')  // Gibbel Fire
-        ]);
-        
-        const data1 = await response1.json();
-        const data2 = await response2.json();
-        
-        // Combine and deduplicate shelters
-        const allShelters = [...data1.shelters, ...data2.shelters];
-        const uniqueShelters = Array.from(
-          new Map(allShelters.map(shelter => [shelter.id, shelter])).values()
-        );
-        
-        // Sort by distance if available
-        const sortedShelters = uniqueShelters.sort((a, b) => 
-          (a.distance || 0) - (b.distance || 0)
-        );
-        
-        setShelters(sortedShelters);
-      } catch (error) {
-        console.error('Error fetching shelters:', error);
-      }
-    }
-
-    fetchShelters();
-  }, []);
-
-  const filteredNews = activeCategory === "All"
-    ? newsItems
-    : newsItems.filter(news => news.category === activeCategory);
 
   const filteredShelters = shelters.filter(shelter => 
     (shelter.name?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
@@ -210,10 +146,7 @@ export default function NewsSection() {
       >
         <TabsList>
           {categories.map(category => (
-            <TabsTrigger
-              key={category}
-              value={category}
-            >
+            <TabsTrigger key={category} value={category}>
               {category}
             </TabsTrigger>
           ))}
@@ -233,14 +166,10 @@ export default function NewsSection() {
         <div className="space-y-4 pr-4">
           {activeCategory === "Shelters" ? (
             filteredShelters.map(shelter => (
-              <EvacShelterCard 
-                key={shelter.id} 
-                shelter={shelter} 
-                distance={shelter.distance}
-              />
+              <EvacShelterCard key={shelter.id} shelter={shelter} />
             ))
           ) : (
-            filteredNews.map(news => (
+            newsItems.map(news => (
               <NewsCard key={news.id} news={news} />
             ))
           )}

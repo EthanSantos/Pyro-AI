@@ -176,6 +176,36 @@ const shelterData: FeatureCollection<Point, ShelterProperties> = {
         region: "Long Beach",
         capacity: 175
       }
+    },
+    {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [-117.0710, 32.7743] },
+      properties: {
+        name: "San Diego State University Shelter",
+        address: "5500 Campanile Dr, San Diego, CA 92182",
+        region: "San Diego",
+        capacity: 600
+      }
+    },
+    {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [-117.1500, 32.7750] },
+      properties: {
+        name: "Mission Valley Shelter",
+        address: "12345 Mission Valley Rd, San Diego, CA 92120",
+        region: "San Diego",
+        capacity: 400
+      }
+    },
+    {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [-117.0842, 32.6401] },
+      properties: {
+        name: "Chula Vista Community Center",
+        address: "276 Fourth Ave, Chula Vista, CA 91910",
+        region: "San Diego",
+        capacity: 300
+      }
     }
   ]
 };

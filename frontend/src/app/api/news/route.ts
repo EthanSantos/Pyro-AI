@@ -44,6 +44,7 @@ interface EvacShelter {
   date_created: string;
   regions: Region[];
   evacZoneStatuses: string[];
+  capacity: number;
 }
 
 interface Shelter {
@@ -180,7 +181,8 @@ async function fetchEvacShelters(): Promise<EvacShelter[]> {
       lng: -116.5453,
       date_created: "2025-01-08T06:01:28Z",
       regions: [],
-      evacZoneStatuses: []
+      evacZoneStatuses: [],
+      capacity: 0
     },
     {
       id: 40399,
@@ -191,7 +193,8 @@ async function fetchEvacShelters(): Promise<EvacShelter[]> {
       lng: -116.9773,
       date_created: "2025-01-08T06:01:28Z",
       regions: [],
-      evacZoneStatuses: []
+      evacZoneStatuses: [],
+      capacity: 0
     },
     {
       id: 40400,
@@ -202,7 +205,8 @@ async function fetchEvacShelters(): Promise<EvacShelter[]> {
       lng: -116.8765,
       date_created: "2025-01-08T06:01:28Z",
       regions: [],
-      evacZoneStatuses: []
+      evacZoneStatuses: [],
+      capacity: 0
     }
   ];
 
@@ -239,6 +243,7 @@ async function fetchEvacShelters(): Promise<EvacShelter[]> {
       lat: 34.1675,
       lng: -118.1309,
       capacity: 225,
+      date_created: new Date().toISOString(),
       evacZoneStatuses: []
     },
     {
@@ -255,6 +260,7 @@ async function fetchEvacShelters(): Promise<EvacShelter[]> {
       lat: 34.1613,
       lng: -118.1676,
       capacity: 400,
+      date_created: new Date().toISOString(),
       evacZoneStatuses: []
     },
     {
@@ -271,6 +277,7 @@ async function fetchEvacShelters(): Promise<EvacShelter[]> {
       lat: 34.1436,
       lng: -118.1386,
       capacity: 1000,
+      date_created: new Date().toISOString(),
       evacZoneStatuses: []
     },
     {
@@ -287,6 +294,7 @@ async function fetchEvacShelters(): Promise<EvacShelter[]> {
       lat: 34.0532,
       lng: -118.4484,
       capacity: 300,
+      date_created: new Date().toISOString(),
       evacZoneStatuses: []
     },
     // Keep existing shelters

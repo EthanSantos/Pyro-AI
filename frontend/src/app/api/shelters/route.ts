@@ -122,6 +122,61 @@ const shelters: Shelter[] = [
     capacity: 400,
     information: "Large capacity venue with full amenities",
     date_created: new Date().toISOString()
+  },
+  {
+    id: 11,
+    name: "San Diego Convention Center",
+    address: "111 W Harbor Dr, San Diego, CA 92101",
+    region: "San Diego",
+    lat: 32.7113,
+    lng: -117.1625,
+    capacity: 1000,
+    information: "Large capacity shelter with medical support",
+    date_created: new Date().toISOString()
+  },
+  {
+    id: 12,
+    name: "San Diego High School",
+    address: "1700 12th Ave, San Diego, CA 92101",
+    region: "San Diego",
+    lat: 32.7110,
+    lng: -117.1570,
+    capacity: 500,
+    information: "Emergency shelter with food and supplies",
+    date_created: new Date().toISOString()
+  },
+  {
+    id: 13,
+    name: "San Diego State University Shelter",
+    address: "5500 Campanile Dr, San Diego, CA 92182",
+    region: "San Diego",
+    lat: 32.7743,
+    lng: -117.0710,
+    capacity: 600,
+    information: "Emergency shelter with food and medical supplies",
+    date_created: new Date().toISOString()
+  },
+  {
+    id: 14,
+    name: "Mission Valley Shelter",
+    address: "12345 Mission Valley Rd, San Diego, CA 92120",
+    region: "San Diego",
+    lat: 32.7750,
+    lng: -117.1500,
+    capacity: 400,
+    information: "Shelter with full amenities and support services",
+    date_created: new Date().toISOString()
+  },
+  {
+    id: 15,
+    name: "Chula Vista Community Center",
+    address: "276 Fourth Ave, Chula Vista, CA 91910",
+    region: "San Diego",
+    lat: 32.6401,
+    lng: -117.0842,
+    capacity: 300,
+    information: "Community center serving as an emergency shelter",
+    date_created: new Date().toISOString()
   }
 ];
 
