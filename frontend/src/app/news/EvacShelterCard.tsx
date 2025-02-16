@@ -41,8 +41,8 @@ export function EvacShelterCard({ shelter }: { shelter: EvacShelter }) {
           <p className="text-sm text-muted-foreground">{shelter.address}</p>
         </div>
         <Button
-          variant="destructive"
-          size="icon"
+          variant="default"
+          size="sm"
           onClick={(e) => {
             e.stopPropagation();
             handleMapClick();
