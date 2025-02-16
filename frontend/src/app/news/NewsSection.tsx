@@ -35,6 +35,9 @@ interface EvacShelter {
   date_created: string;
   regions: Region[];
   evacZoneStatuses: string[];
+  region: string;
+  capacity: number;
+  distance?: number;
 }
 
 interface Region {
@@ -148,6 +151,38 @@ export default function NewsSection() {
     };
   }, []);
 
+  useEffect(() => {
+    async function fetchShelters() {
+      try {
+        // Fetch shelters for both fire locations
+        const [response1, response2] = await Promise.all([
+          fetch('/api/shelters?lat=32.8622&lng=-117.237'),  // Gilman Fire
+          fetch('/api/shelters?lat=33.708601&lng=-116.964339')  // Gibbel Fire
+        ]);
+        
+        const data1 = await response1.json();
+        const data2 = await response2.json();
+        
+        // Combine and deduplicate shelters
+        const allShelters = [...data1.shelters, ...data2.shelters];
+        const uniqueShelters = Array.from(
+          new Map(allShelters.map(shelter => [shelter.id, shelter])).values()
+        );
+        
+        // Sort by distance if available
+        const sortedShelters = uniqueShelters.sort((a, b) => 
+          (a.distance || 0) - (b.distance || 0)
+        );
+        
+        setShelters(sortedShelters);
+      } catch (error) {
+        console.error('Error fetching shelters:', error);
+      }
+    }
+
+    fetchShelters();
+  }, []);
+
   const filteredNews = activeCategory === "All"
     ? newsItems
     : newsItems.filter(news => news.category === activeCategory);
@@ -190,7 +225,11 @@ export default function NewsSection() {
         <div className="space-y-4 pr-4">
           {activeCategory === "Shelters" ? (
             filteredShelters.map(shelter => (
-              <EvacShelterCard key={shelter.id} shelter={shelter} />
+              <EvacShelterCard 
+                key={shelter.id} 
+                shelter={shelter} 
+                distance={shelter.distance}
+              />
             ))
           ) : (
             filteredNews.map(news => (

@@ -7,6 +7,8 @@ import axios from "axios";
 import * as turf from "@turf/turf";
 import type { FeatureCollection, Feature, Point, Polygon } from "geojson";
 import { useWildfireContext } from "@/context/WildfireContext";
+import { Home } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!;
 
@@ -21,6 +23,13 @@ interface FireProperties {
 
 interface PersonProperties {
   Name: string;
+}
+
+interface ShelterProperties {
+  name: string;
+  address: string;
+  region: string;
+  capacity: number;
 }
 
 // Sample Data
@@ -74,6 +83,102 @@ const personData: FeatureCollection<Point, PersonProperties> = {
   ],
 };
 
+const shelterData: FeatureCollection<Point, ShelterProperties> = {
+  type: "FeatureCollection",
+  features: [
+    {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [-118.1445, 34.1478] },
+      properties: {
+        name: "Pasadena Emergency Shelter",
+        address: "285 E Walnut St, Pasadena",
+        region: "Pasadena",
+        capacity: 200
+      }
+    },
+    {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [-118.4452, 34.0635] },
+      properties: {
+        name: "Westwood Community Center",
+        address: "1350 S Sepulveda Blvd",
+        region: "Westwood",
+        capacity: 150
+      }
+    },
+    {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [-118.1309, 34.1675] },
+      properties: {
+        name: "Pasadena Community Center",
+        address: "1750 N Altadena Dr",
+        region: "Pasadena",
+        capacity: 225
+      }
+    },
+    {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [-118.1676, 34.1613] },
+      properties: {
+        name: "Rose Bowl Emergency Shelter",
+        address: "1001 Rose Bowl Dr",
+        region: "Pasadena",
+        capacity: 400
+      }
+    },
+    {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [-116.9700, 33.7100] },
+      properties: {
+        name: "Hemet Community Shelter",
+        address: "1200 State Street",
+        region: "Hemet",
+        capacity: 200
+      }
+    },
+    {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [-117.2200, 32.8700] },
+      properties: {
+        name: "San Diego Emergency Center",
+        address: "4000 La Jolla Village Dr",
+        region: "La Jolla",
+        capacity: 250
+      }
+    },
+    {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [-118.2437, 34.0522] },
+      properties: {
+        name: "Downtown LA Shelter",
+        address: "1400 S Main St",
+        region: "Downtown",
+        capacity: 300
+      }
+    },
+    {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [-118.3568, 34.1478] },
+      properties: {
+        name: "Valley Emergency Center",
+        address: "15100 Valley Blvd",
+        region: "San Fernando Valley",
+        capacity: 250
+      }
+    },
+    {
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [-118.1157, 33.9283] },
+      properties: {
+        name: "Long Beach Safe Haven",
+        address: "2100 Ocean Blvd",
+        region: "Long Beach",
+        capacity: 175
+      }
+    }
+  ]
+};
+
 // Helper Functions
 function createFireMarkerElement(): HTMLDivElement {
   const el = document.createElement("div");
@@ -105,6 +210,24 @@ function createPersonMarkerElement(): HTMLDivElement {
   return el;
 }
 
+function createShelterMarkerElement(): HTMLDivElement {
+  const el = document.createElement("div");
+  el.innerHTML = `
+    <div style="width: 28px; height: 28px; background: white; 
+                border-radius: 50%; display: flex; align-items: center; 
+                justify-content: center; border: 2px solid #2563eb;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <svg width="14" height="14" viewBox="0 0 24 24" stroke="#2563eb" 
+           fill="none" stroke-width="2" stroke-linecap="round" 
+           stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+    </div>
+  `;
+  return el;
+}
+
 function createFirePopupContent(properties: FireProperties): string {
   return `
     <h3>${properties.Name}</h3>
@@ -112,6 +235,22 @@ function createFirePopupContent(properties: FireProperties): string {
     <p><strong>County:</strong> ${properties.County}</p>
     <p><strong>Acres Burned:</strong> ${properties.AcresBurned}</p>
     <p><a href="${properties.Url}" target="_blank">More Info</a></p>
+  `;
+}
+
+function createShelterPopupContent(properties: ShelterProperties, coordinates: [number, number]): string {
+  return `
+    <div class="p-2">
+      <h3 class="font-bold text-sm mb-1">${properties.name}</h3>
+      <p class="text-sm text-gray-600">${properties.address}</p>
+      <p class="text-xs text-blue-600 mt-1">${properties.region} Region</p>
+      <button 
+        onclick="window.showRouteToShelter(${coordinates[1]}, ${coordinates[0]})"
+        class="mt-3 px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+      >
+        Get Directions
+      </button>
+    </div>
   `;
 }
 
@@ -159,6 +298,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   const [selectedLocation, setSelectedLocation] = useState<[number, number]>(
     personData.features[0].geometry.coordinates as [number, number]
   );
+  const [showShelters, setShowShelters] = useState(false);
+  const shelterMarkersRef = useRef<mapboxgl.Marker[]>([]);
 
   const { routeData } = useWildfireContext();
 
@@ -233,9 +374,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         new mapboxgl.Marker({ element: createFireMarkerElement() })
           .setLngLat(feature.geometry.coordinates as [number, number])
           .setPopup(
-            new mapboxgl.Popup({ offset: 25 }).setHTML(
-              createFirePopupContent(feature.properties)
-            )
+            new mapboxgl.Popup({ offset: 25 })
+              .setHTML(createFirePopupContent(feature.properties))
           )
           .addTo(map);
       });
@@ -276,13 +416,30 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         computeSafetyScore(newCoords);
       });
 
+      // Create shelter markers but don't add them to map yet
+      shelterMarkersRef.current = shelterData.features.map((shelter) => {
+        return new mapboxgl.Marker({ element: createShelterMarkerElement() })
+          .setLngLat(shelter.geometry.coordinates as [number, number])
+          .setPopup(
+            new mapboxgl.Popup({ offset: 25 })
+              .setHTML(createShelterPopupContent(
+                shelter.properties,
+                shelter.geometry.coordinates as [number, number]
+              ))
+          );
+      });
+
       // Initialize with default location
       fetchSatelliteImageAndPredict(selectedLocation);
       computeSafetyScore(selectedLocation);
       onCoordinatesChange?.(selectedLocation);
     });
 
-    return () => map.remove();
+    return () => {
+      // Remove markers on cleanup
+      shelterMarkersRef.current.forEach(marker => marker.remove());
+      map.remove();
+    };
   }, []);
 
   // Update route layer when routeData changes
@@ -346,14 +503,104 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     }
   }, [routeData]);
 
+  // Modify the shelter visibility effect
+  useEffect(() => {
+    if (!mapRef.current) return;
+    
+    shelterMarkersRef.current.forEach(marker => marker.remove());
+    
+    if (showShelters) {
+      shelterMarkersRef.current.forEach(marker => marker.addTo(mapRef.current!));
+    }
+  }, [showShelters]);
+
+  // Add function to show route
+  const showRouteToShelter = async (destLat: number, destLng: number) => {
+    if (!mapRef.current || !selectedLocation) return;
+
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/directions/v5/mapbox/driving/` +
+        `${selectedLocation[0]},${selectedLocation[1]};${destLng},${destLat}` +
+        `?steps=true&geometries=geojson&access_token=${mapboxgl.accessToken}`
+      );
+
+      const data = await response.json();
+
+      if (data.routes && data.routes[0]) {
+        const route = data.routes[0];
+        const routeGeoJSON: GeoJSON.Feature<GeoJSON.LineString> = {
+          type: "Feature",
+          properties: {},
+          geometry: route.geometry
+        };
+
+        // Remove existing route if any
+        if (mapRef.current.getLayer("route-layer")) {
+          mapRef.current.removeLayer("route-layer");
+        }
+        if (mapRef.current.getSource("route")) {
+          mapRef.current.removeSource("route");
+        }
+
+        // Add new route
+        mapRef.current.addSource("route", {
+          type: "geojson",
+          data: routeGeoJSON
+        });
+
+        mapRef.current.addLayer({
+          id: "route-layer",
+          type: "line",
+          source: "route",
+          layout: {
+            "line-join": "round",
+            "line-cap": "round"
+          },
+          paint: {
+            "line-color": "#1db7dd",
+            "line-width": 5
+          }
+        });
+
+        // Fit map to show the entire route
+        const coordinates = route.geometry.coordinates;
+        const bounds = coordinates.reduce(
+          (bounds: mapboxgl.LngLatBounds, coord: number[]) =>
+            bounds.extend(coord as [number, number]),
+          new mapboxgl.LngLatBounds(coordinates[0] as [number, number], coordinates[0] as [number, number])
+        );
+        mapRef.current.fitBounds(bounds, { padding: 50 });
+      }
+    } catch (error) {
+      console.error("Error getting directions:", error);
+    }
+  };
+
+  // Add the function to the window object so the popup button can access it
+  useEffect(() => {
+    (window as any).showRouteToShelter = showRouteToShelter;
+    return () => {
+      delete (window as any).showRouteToShelter;
+    };
+  }, [selectedLocation]);
+
   return (
-    <div className="relative" style={{ width, height }}>
-      <div
-        ref={mapContainerRef}
-        style={{ width: "100%", height: "100%" }}
-        className="border rounded shadow"
-      />
-    </div>
+    <>
+      <div className="relative" style={{ width, height }}>
+        <div
+          ref={mapContainerRef}
+          style={{ width: "100%", height: "100%" }}
+          className="border rounded shadow"
+        />
+        <Button
+          className="absolute top-4 right-4 bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 shadow-lg"
+          onClick={() => setShowShelters(!showShelters)}
+        >
+          {showShelters ? "Hide Shelters" : "Show Nearest Shelters"}
+        </Button>
+      </div>
+    </>
   );
 };
 

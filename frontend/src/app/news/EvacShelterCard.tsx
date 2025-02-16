@@ -4,48 +4,38 @@ import { Button } from "@/components/ui/button";
 import { MapPin } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 
-interface Region {
-  id: number;
-  display_name: string;
-  state: string;
-  evac_zone_style: string;
-}
-
 interface EvacShelter {
-  id: number;
   name: string;
   address: string;
-  information: string;
+  region: string;
   lat: number;
   lng: number;
+  capacity: number;
+  information?: string;
   date_created: string;
-  regions: Region[];
-  evacZoneStatuses: string[];
 }
 
-export function EvacShelterCard({ shelter }: { shelter: EvacShelter }) {
+export function EvacShelterCard({ shelter, distance }: { shelter: EvacShelter; distance?: number }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const handleMapClick = () => {
-    window.open(`https://www.google.com/maps/search/?api=1&query=${shelter.lat},${shelter.lng}`);
-  };
-
   return (
-    <Card 
-      className="p-4 glass-card cursor-pointer hover:bg-accent/50 transition-colors"
-      onClick={() => setIsExpanded(!isExpanded)}
-    >
+    <Card className="p-4 glass-card cursor-pointer hover:bg-accent/50 transition-colors">
       <div className="flex justify-between items-start">
         <div>
           <h3 className="font-semibold">{shelter.name}</h3>
           <p className="text-sm text-muted-foreground">{shelter.address}</p>
+          {distance && (
+            <p className="text-xs text-orange-500 mt-1">
+              {distance.toFixed(1)} km away
+            </p>
+          )}
         </div>
         <Button
-          variant="destructive"
+          variant="ghost"
           size="icon"
           onClick={(e) => {
             e.stopPropagation();
-            handleMapClick();
+            window.open(`https://www.google.com/maps/search/?api=1&query=${shelter.lat},${shelter.lng}`);
           }}
         >
           <MapPin className="h-4 w-4" />
@@ -55,26 +45,17 @@ export function EvacShelterCard({ shelter }: { shelter: EvacShelter }) {
       {isExpanded && (
         <div className="mt-4 space-y-2">
           <div className="text-sm">
-            <p className="font-medium mb-1">Information:</p>
-            <p className="whitespace-pre-wrap text-muted-foreground">{shelter.information}</p>
+            <p className="font-medium mb-1">Capacity:</p>
+            <p className="text-muted-foreground">{shelter.capacity} people</p>
           </div>
           
-          {shelter.regions.length > 0 && (
-            <div className="text-sm">
-              <p className="font-medium mb-1">Regions:</p>
-              {shelter.regions.map(region => (
-                <div key={region.id} className="ml-2 text-muted-foreground">
-                  • {region.display_name}, {region.state}
-                  {region.evac_zone_style && (
-                    <span className="ml-2 text-xs">({region.evac_zone_style})</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="text-sm">
+            <p className="font-medium mb-1">Region:</p>
+            <p className="text-muted-foreground">{shelter.region}</p>
+          </div>
           
           <div className="text-xs text-muted-foreground mt-4">
-            <p>Opened: {new Date(shelter.date_created).toLocaleString()}</p>
+            <p>Updated: {new Date().toLocaleDateString()}</p>
           </div>
         </div>
       )}
