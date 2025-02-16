@@ -8,7 +8,7 @@ import Image from "next/image"; // Import Next.js Image component
 const navItems = [
   { name: "HOME", href: "/", icon: Home },
   { name: "DASHBOARD", href: "/dashboard", icon: Map },
-  { name: "NEWS", href: "/news_2", icon: Newspaper },
+  { name: "NEWS", href: "/news", icon: Newspaper },
 ];
 
 export default function NavigationBar() {
