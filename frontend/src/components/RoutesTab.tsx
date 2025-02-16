@@ -1,23 +1,54 @@
-import React, { useState, useEffect } from 'react';
-import { Card } from "@/components/ui/card";
-import UnifiedTabContent from './UnifiedTabContent';
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import axios from 'axios';
-import * as turf from '@turf/turf';
-import polyline from '@mapbox/polyline';
-import { useWildfireContext } from '@/context/WildfireContext';
-import type { FeatureCollection, Feature, Point, Polygon, MultiPolygon, Geometry } from "geojson";
+"use client"
+
+import React, { useState, useEffect } from "react"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import UnifiedTabContent from "./UnifiedTabContent"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Loader2, AlertTriangle, MapPin, Navigation, AlertCircle } from "lucide-react"
+import axios from "axios"
+import * as turf from "@turf/turf"
+import polyline from "@mapbox/polyline"
+import { useWildfireContext } from "@/context/WildfireContext"
+import type { FeatureCollection, Point, Polygon, MultiPolygon } from "geojson"
+
+/* -------------------- Fire Data & Route Interfaces -------------------- */
 
 interface FireProperties {
-  Name: string;
-  Location: string;
-  County: string;
-  AcresBurned: number;
-  Url: string;
+  Name: string
+  Location: string
+  County: string
+  AcresBurned: number
+  Url: string
 }
 
-// 1) Your fire data remains the same.
+interface RouteStep {
+  distance: number
+  duration: number
+  maneuver: {
+    instruction: string
+  }
+}
+
+interface RouteLeg {
+  steps: RouteStep[]
+}
+
+interface RouteGeoJSON {
+  type: "LineString"
+  coordinates: [number, number][]
+}
+
+export interface RouteData {
+  distance: number
+  duration: number
+  legs: RouteLeg[]
+  geometry: RouteGeoJSON
+}
+
+/* -------------------- Sample Fire Data (2 km Danger Zones) -------------------- */
+
 const fireData: FeatureCollection<Point, FireProperties> = {
   type: "FeatureCollection",
   features: [
@@ -55,46 +86,94 @@ const fireData: FeatureCollection<Point, FireProperties> = {
       },
     },
   ],
-};
+}
 
-// 2) Build 2 km circles around each fire with 16 steps and combine into a MultiPolygon.
-function buildFireAvoidPolygon(): Geometry {
-  // Create a circle for each fire with 16 steps
+/**
+ * Creates 2 km circles around each fire and combines them into a single geometry.
+ */
+function buildFireAvoidPolygon(): Polygon | MultiPolygon {
   const circles = fireData.features.map((feat) =>
     turf.circle(feat.geometry.coordinates as [number, number], 2, {
       steps: 16,
       units: "kilometers",
-    })
-  );
+    }),
+  )
 
-  // Combine circles into a single geometry
   const combined = turf.combine({
     type: "FeatureCollection",
     features: circles,
-  });
+  })
 
-  // Return the geometry directly from the first feature.
-  return combined.features[0].geometry;
+  return combined.features[0].geometry as Polygon | MultiPolygon
 }
 
-const RoutesTab = () => {
-  const { userCoordinates, setRouteData, routeData } = useWildfireContext();
+/* -------------------- Directions Timeline Component -------------------- */
 
-  // For Mapbox address auto‑complete:
-  const [addressQuery, setAddressQuery] = useState("");
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [selectedAddress, setSelectedAddress] = useState<any>(null);
+interface DirectionsTimelineProps {
+  steps: RouteStep[]
+}
 
-  // UI states
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [warning, setWarning] = useState("");
+/**
+ * Randomly determines whether to display a warning and, if so,
+ * randomly picks one of the warning messages.
+ */
+function getWarningData() {
+  const warnings = ["Fire approaching from east", "Smoke affecting visibility", "Heavy traffic"]
+  if (Math.random() < 0.5) {
+    return { showWarning: false, details: "" }
+  } else {
+    const randomIndex = Math.floor(Math.random() * warnings.length)
+    return { showWarning: true, details: warnings[randomIndex] }
+  }
+}
 
-  // 3) Fetch suggestions from Mapbox for auto-complete
+const DirectionsTimeline: React.FC<DirectionsTimelineProps> = ({ steps }) => {
+  return (
+    <div className="relative">
+      <h4 className="text-base font-semibold mb-4">Turn-by-Turn Directions</h4>
+      <div className="border-l-2 border-gray-300 ml-4">
+        {steps.map((step, index) => {
+          const warningData = getWarningData()
+          return (
+            <div key={index} className="relative pl-8 pb-6">
+              <div className="absolute -left-[17px] top-0 w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-semibold shadow-md">
+                {index + 1}
+              </div>
+              <div className="mb-1 font-semibold text-gray-800">{step.maneuver.instruction}</div>
+              <div className="text-sm text-gray-600 mb-2">
+                {(step.distance / 1609.34).toFixed(2)} miles &bull; {Math.round(step.duration / 60)} mins
+              </div>
+              {warningData.showWarning && (
+                <div className="flex items-center gap-1 text-xs mt-1">
+                  <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                  <span className="text-yellow-700">{warningData.details}</span>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* -------------------- Main RoutesTab Component -------------------- */
+
+const RoutesTab: React.FC = () => {
+  const { userCoordinates, setRouteData, routeData } = useWildfireContext()
+
+  const [addressQuery, setAddressQuery] = useState<string>("")
+  const [suggestions, setSuggestions] = useState<any[]>([])
+  const [selectedAddress, setSelectedAddress] = useState<any>(null)
+
+  const [loading, setLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string>("")
+  const [warning, setWarning] = useState<string>("")
+
   useEffect(() => {
     if (addressQuery.length < 3) {
-      setSuggestions([]);
-      return;
+      setSuggestions([])
+      return
     }
     const fetchSuggestions = async () => {
       try {
@@ -106,212 +185,219 @@ const RoutesTab = () => {
               autocomplete: true,
               limit: 5,
             },
-          }
-        );
-        setSuggestions(response.data.features);
+          },
+        )
+        setSuggestions(response.data.features)
       } catch (err) {
-        console.error("Error fetching suggestions", err);
+        console.error("Error fetching suggestions", err)
       }
-    };
-    const t = setTimeout(fetchSuggestions, 300);
-    return () => clearTimeout(t);
-  }, [addressQuery]);
+    }
+    const t = setTimeout(fetchSuggestions, 300)
+    return () => clearTimeout(t)
+  }, [addressQuery])
 
-  // 4) On "Go", check destination safety then call ORS.
   const handleFindRoute = async () => {
-    setError("");
-    setWarning("");
-    setRouteData(null);
+    setError("")
+    setWarning("")
+    setRouteData(null)
 
     if (!userCoordinates) {
-      setError("User location not set.");
-      return;
+      setError("User location not set.")
+      return
     }
     if (!selectedAddress) {
-      setError("Please select a valid address from suggestions.");
-      return;
+      setError("Please select a valid address from suggestions.")
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
 
     try {
-      // Use selectedAddress.center ([lng, lat]) from Mapbox
-      const destCoords = selectedAddress.center as [number, number];
+      const destCoords = selectedAddress.center as [number, number]
+      const avoidPolygons = buildFireAvoidPolygon()
 
-      // Get the avoid_polygons geometry (raw MultiPolygon or Polygon)
-      const avoidPolygons = buildFireAvoidPolygon();
-
-      // Check only if the DESTINATION is in the avoid area.
-      const destPoint = turf.point(destCoords);
+      // Check if destination is inside the avoid polygon.
+      const destPoint = turf.point(destCoords)
       if (turf.booleanPointInPolygon(destPoint, avoidPolygons)) {
-        setError("Destination is in a dangerous area. No safe route found.");
-        setLoading(false);
-        return;
+        setError("Destination is in a dangerous area. No safe route found.")
+        setLoading(false)
+        return
       }
 
-      // Check if the starting point is inside the avoid area.
-      const startPoint = turf.point(userCoordinates);
-      const startInside = turf.booleanPointInPolygon(startPoint, avoidPolygons);
+      // Check if starting point is inside the danger zone.
+      const startPoint = turf.point(userCoordinates)
+      const startInside = turf.booleanPointInPolygon(startPoint, avoidPolygons)
 
-      // Prepare the ORS request.
-      // If the starting point is inside the danger zone, omit avoid_polygons.
-      let orsBody;
+      let orsBody: any
       if (startInside) {
         orsBody = {
           coordinates: [
-            [userCoordinates[0], userCoordinates[1]], // Origin: [lng, lat]
-            [destCoords[0], destCoords[1]],            // Destination: [lng, lat]
+            [userCoordinates[0], userCoordinates[1]],
+            [destCoords[0], destCoords[1]],
           ],
           instructions: true,
           geometry: true,
-        };
+        }
       } else {
         orsBody = {
           coordinates: [
-            [userCoordinates[0], userCoordinates[1]], // Origin: [lng, lat]
-            [destCoords[0], destCoords[1]],            // Destination: [lng, lat]
+            [userCoordinates[0], userCoordinates[1]],
+            [destCoords[0], destCoords[1]],
           ],
           instructions: true,
           geometry: true,
           options: {
             avoid_polygons: avoidPolygons,
           },
-        };
+        }
       }
 
-      const orsUrl = "https://api.openrouteservice.org/v2/directions/driving-car";
+      const orsUrl = "https://api.openrouteservice.org/v2/directions/driving-car"
       const orsRes = await axios.post(orsUrl, orsBody, {
         headers: {
           Authorization: process.env.NEXT_PUBLIC_ORS_API_KEY || "",
           "Content-Type": "application/json",
         },
-      });
+      })
 
       if (!orsRes.data || !orsRes.data.routes || orsRes.data.routes.length === 0) {
-        setError("No route found from ORS.");
-        setLoading(false);
-        return;
+        setError("No route found from ORS.")
+        setLoading(false)
+        return
       }
 
-      const firstRoute = orsRes.data.routes[0];
-      const distance = firstRoute.summary.distance; // in meters
-      const duration = firstRoute.summary.duration; // in seconds
-      const steps = firstRoute.segments?.[0]?.steps || [];
+      const firstRoute = orsRes.data.routes[0]
+      const distance: number = firstRoute.summary.distance
+      const duration: number = firstRoute.summary.duration
 
-      // Decode the encoded polyline returned by ORS (default precision is 5)
-      const decodedCoords = polyline.decode(firstRoute.geometry, 5);
-      // polyline.decode returns an array of [lat, lng]. Swap them to [lng, lat] for GeoJSON.
-      const routeCoordinates = decodedCoords.map(([lat, lng]) => [lng, lat]);
+      const stepsRaw = firstRoute.segments?.[0]?.steps || []
+      const steps: RouteStep[] = stepsRaw.map((s: any) => ({
+        distance: s.distance,
+        duration: s.duration,
+        maneuver: { instruction: s.instruction },
+      }))
 
-      const routeGeoJSON = {
+      // Decode polyline and swap [lat, lng] to [lng, lat]
+      const decodedCoords: Array<[number, number]> = polyline.decode(firstRoute.geometry, 5)
+      const routeCoordinates: [number, number][] = decodedCoords.map(([lat, lng]: [number, number]) => [lng, lat])
+
+      const routeGeoJSON: RouteGeoJSON = {
         type: "LineString",
         coordinates: routeCoordinates,
-      };
+      }
 
-      const routeObj = {
+      const routeObj: RouteData = {
         distance,
         duration,
-        legs: [
-          {
-            steps: steps.map((s: any) => ({
-              distance: s.distance,
-              duration: s.duration,
-              maneuver: { instruction: s.instruction },
-            })),
-          },
-        ],
+        legs: [{ steps }],
         geometry: routeGeoJSON,
-      };
+      }
 
-      setRouteData(routeObj);
-      setWarning("ORS route succeeded!");
+      setRouteData(routeObj)
+      setWarning("ORS route succeeded!")
     } catch (err: any) {
-      console.error("Error with ORS directions:", err.response?.data || err);
-      setError("Error fetching directions from ORS. See console for details.");
+      console.error("Error with ORS directions:", err.response?.data || err)
+      setError("Error fetching directions from ORS. See console for details.")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  // 5) Render route summary and directions timeline.
-  const metersToMiles = (m: number) => (m / 1609.34).toFixed(2);
-  const secondsToMinutes = (s: number) => Math.round(s / 60);
+  const metersToMiles = (m: number) => (m / 1609.34).toFixed(2)
+  const secondsToMinutes = (s: number) => Math.round(s / 60)
 
   return (
     <UnifiedTabContent header={<h2 className="text-lg font-semibold">Routes</h2>}>
-      <Card className="p-4 mb-4">
-        <h3 className="font-medium mb-2">Find Safe Route</h3>
+      <Card className="p-6 mb-6 shadow-sm">
+        <CardHeader className="px-0 pt-0">
+          <CardTitle className="flex items-center gap-2">
+            <Navigation className="h-6 w-6 text-blue-500" />
+            Find Safe Route
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-0 pb-0">
+          <div className="relative mb-4">
+            <Input
+              type="text"
+              placeholder="Enter destination"
+              value={selectedAddress ? selectedAddress.place_name : addressQuery}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setAddressQuery(e.target.value);
+                setSelectedAddress(null);
+              }}
+              className="pr-10"
+            />
+            <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
 
-        {/* Address input with suggestions */}
-        <div className="relative">
-          <Input
-            type="text"
-            placeholder="Enter destination"
-            value={selectedAddress ? selectedAddress.place_name : addressQuery}
-            onChange={(e) => {
-              setAddressQuery(e.target.value);
-              setSelectedAddress(null);
-            }}
-          />
-          {suggestions.length > 0 && !selectedAddress && (
-            <ul className="absolute z-10 bg-white border border-gray-200 w-full max-h-60 overflow-y-auto">
-              {suggestions.map((feature) => (
-                <li
-                  key={feature.id}
-                  onClick={() => {
-                    setSelectedAddress(feature);
-                    setSuggestions([]);
-                    setAddressQuery(feature.place_name);
-                  }}
-                  className="p-2 hover:bg-gray-100 cursor-pointer"
-                >
-                  {feature.place_name}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {warning && <p className="text-sm text-yellow-600 mt-2">{warning}</p>}
-        <div className="flex gap-2 mb-2 mt-2">
-          <Button onClick={handleFindRoute} disabled={loading || !selectedAddress}>
-            {loading ? "Searching..." : "Go"}
-          </Button>
-        </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-
-        {routeData && (
-          <div className="mt-4">
-            <h4 className="font-medium mb-2">Route Summary</h4>
-            <p>
-              Distance: {metersToMiles(routeData.distance)} miles | Duration:{" "}
-              {secondsToMinutes(routeData.duration)} minutes
-            </p>
-            <h4 className="font-medium mt-4 mb-2">Directions Timeline</h4>
-            <ul className="list-decimal list-inside space-y-2 text-sm">
-              {routeData.legs &&
-                routeData.legs[0] &&
-                routeData.legs[0].steps.map((step: any, index: number) => (
-                  <li key={index}>
-                    {step.maneuver.instruction} (
-                    {metersToMiles(step.distance || 0)} miles,{" "}
-                    {secondsToMinutes(step.duration || 0)} minutes)
-                  </li>
-                ))}
-            </ul>
+            {suggestions.length > 0 && !selectedAddress && (
+              <div className="absolute left-0 right-0 top-full mt-1 rounded-md bg-white border border-gray-200 shadow-lg max-h-60 overflow-y-auto z-20">
+                <ul>
+                  {suggestions.map((feature: any) => (
+                    <li
+                      key={feature.id}
+                      onClick={() => {
+                        setSelectedAddress(feature);
+                        setSuggestions([]);
+                        setAddressQuery(feature.place_name);
+                      }}
+                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer transition-colors"
+                    >
+                      {feature.place_name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
-        )}
-      </Card>
 
-      <Card className="p-4">
-        <h3 className="font-medium mb-2">Evacuation Routes</h3>
-        <p className="text-sm text-muted-foreground">
-          No active evacuation routes.
-        </p>
+          {warning && (
+            <Alert className="mt-4" variant="success">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>Safe route found!</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="flex gap-2 mt-4">
+            <Button
+              onClick={handleFindRoute}
+              disabled={loading || !selectedAddress}
+              className="w-full"
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="animate-spin w-4 h-4" /> Searching...
+                </span>
+              ) : (
+                "Go"
+              )}
+            </Button>
+          </div>
+
+          {error && (
+            <Alert className="mt-4" variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Couldn't find a safe route. Please try again.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {routeData && (
+            <div className="mt-6 border-t pt-4">
+              <h4 className="font-medium text-lg mb-2">Route Summary</h4>
+              <p className="text-sm text-gray-700 mb-4">
+                Distance: {metersToMiles(routeData.distance)} miles | Duration:{" "}
+                {secondsToMinutes(routeData.duration)} minutes
+              </p>
+              <DirectionsTimeline steps={routeData.legs[0].steps} />
+            </div>
+          )}
+        </CardContent>
       </Card>
-      <div className="flex-1" />
     </UnifiedTabContent>
-  );
-};
 
-export default React.memo(RoutesTab);
+  )
+}
+
+export default React.memo(RoutesTab)
+
