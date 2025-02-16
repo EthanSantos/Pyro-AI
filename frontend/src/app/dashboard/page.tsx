@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import MapboxMap from "@/components/MapboxMap";
 import { AnimatedNumber } from "@/components/AnimatedNumber";
@@ -8,6 +8,7 @@ import { Wind, Shield, Flame } from "lucide-react";
 import { SidePanel } from "@/components/SidePanel";
 import { WildfireProvider } from "@/context/WildfireContext";
 
+// Define helper function for safety color
 function getSafetyColor(score: number): string {
   if (score < 25) return "text-red-600";
   if (score < 50) return "text-orange-500";
@@ -15,13 +16,65 @@ function getSafetyColor(score: number): string {
   return "text-green-600";
 }
 
+// --- API Interfaces and helper function for weather and AQI ---
+interface WeatherResponse {
+  current: {
+    temperature_2m: number;
+    wind_speed_10m: number;
+    time: string;
+  };
+  hourly: {
+    time: string[];
+    temperature_2m: number[];
+    wind_speed_10m: number[];
+    relative_humidity_2m: number[];
+  };
+}
+
+interface AirQualityResponse {
+  hourly: {
+    time: string[];
+    us_aqi: number[];
+  };
+}
+
+async function getWeatherAndAQI(latitude: number, longitude: number) {
+  // Weather data endpoint
+  const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,wind_speed_10m,relative_humidity_2m`;
+
+  // Air quality endpoint
+  const aqiUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${latitude}&longitude=${longitude}&hourly=us_aqi`;
+
+  try {
+    const [weatherResponse, aqiResponse] = await Promise.all([
+      fetch(weatherUrl),
+      fetch(aqiUrl)
+    ]);
+
+    const weatherData: WeatherResponse = await weatherResponse.json();
+    const aqiData: AirQualityResponse = await aqiResponse.json();
+
+    return {
+      weather: weatherData,
+      airQuality: aqiData
+    };
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    throw error;
+  }
+}
+
 export default function Dashboard() {
+  // State variables for wildfire data
   const [riskValue, setRiskValue] = useState<string>("N/A");
   const [safetyScore, setSafetyScore] = useState<number | null>(null);
   const [userCoordinates, setUserCoordinates] = useState<[number, number] | null>(null);
   const [routeData, setRouteData] = useState<any>(null);
 
-  // This sample fireData array is used in the chat prompt.
+  // New state for AQI (Air Quality Index)
+  const [aqi, setAqi] = useState<number | null>(null);
+
+  // Sample fireData array used in the chat prompt.
   const fireData = [
     {
       Name: "Sepulveda Fire",
@@ -46,7 +99,25 @@ export default function Dashboard() {
     }
   ];
 
-  const aqi = 157;
+  // Update AQI whenever userCoordinates changes
+  useEffect(() => {
+    async function updateAQI() {
+      if (userCoordinates) {
+        try {
+          const { airQuality } = await getWeatherAndAQI(userCoordinates[1], userCoordinates[0]);
+          // We use the first hourly AQI value from the API response
+          if (airQuality.hourly && airQuality.hourly.us_aqi.length > 0) {
+            setAqi(airQuality.hourly.us_aqi[0]);
+          }
+        } catch (error) {
+          console.error("Error updating AQI:", error);
+        }
+      }
+    }
+    updateAQI();
+  }, [userCoordinates]);
+
+  const aqiDisplay = aqi !== null ? aqi : "N/A";
 
   return (
     <WildfireProvider
@@ -79,8 +150,8 @@ export default function Dashboard() {
                   <Wind className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-red-600">{aqi}</div>
-                  <p className="text-xs text-muted-foreground">Unhealthy</p>
+                  <div className="text-2xl font-bold text-red-600">{aqiDisplay}</div>
+                  <p className="text-xs text-muted-foreground">Current AQI</p>
                 </CardContent>
               </Card>
 
