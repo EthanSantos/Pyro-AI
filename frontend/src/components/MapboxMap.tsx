@@ -78,7 +78,7 @@ const personData: FeatureCollection<Point, PersonProperties> = {
   features: [
     {
       type: "Feature",
-      geometry: { type: "Point", coordinates: [-117.227, 32.8722] },
+      geometry: { type: "Point", coordinates: [-117.21704198973998, 32.87748192417993] },
       properties: { Name: "My Person" },
     },
   ],
@@ -516,6 +516,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         onCoordinatesChange?.(newCoords);
         fetchSatelliteImageAndPredict(newCoords);
         computeSafetyScore(newCoords);
+        console.log(newCoords)
       });
 
       // Create shelter markers but don't add them to map yet
