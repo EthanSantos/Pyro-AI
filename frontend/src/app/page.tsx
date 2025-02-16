@@ -27,8 +27,9 @@ export default function Home() {
       </nav>
 
       {/* Hero Section */}
-      <div className="container mx-auto px-4 flex items-center min-h-[85vh]">
-        <div className="max-w-4xl pl-12">
+      <div className="container mx-auto px-4 flex items-center min-h-[85vh] overflow-hidden relative">
+        {/* Left content */}
+        <div className="max-w-4xl pl-12 z-10">
           <h1 className="text-6xl font-bold text-white mb-6">Meet PYRO.AI!</h1>
           <h2 className="text-7xl font-bold mb-8 animate-gradient tracking-tight">
             Stay Ahead of the Flames
