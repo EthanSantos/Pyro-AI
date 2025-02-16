@@ -174,17 +174,7 @@ def predict_wildfire_risk():
         )
         
         risk_percentage = min(int(base_risk * 100), 100)
-        
-        if risk_percentage < 20:
-            risk_level = "Very Low"
-        elif risk_percentage < 40:
-            risk_level = "Low"
-        elif risk_percentage < 60:
-            risk_level = "Moderate"
-        elif risk_percentage < 80:
-            risk_level = "High"
-        else:
-            risk_level = "Extreme"
+
         
         app.logger.info(f"""
             Prediction details for coordinates {coordinates}:
@@ -193,11 +183,11 @@ def predict_wildfire_risk():
             Wind Factor: {wind_factor:.2f}
             Temperature Factor: {temp_factor:.2f}
             Humidity Factor: {humidity_factor:.2f}
-            Final Risk: {risk_percentage}% ({risk_level})
+            Final Risk: {risk_percentage}% ({risk_percentage})
         """)
         
         return jsonify({
-            "risk": risk_level,
+            "risk": f"{risk_percentage}%",
             "risk_percentage": f"{risk_percentage}%",
             "coordinates": coordinates,
             "confidence": risk_percentage,
