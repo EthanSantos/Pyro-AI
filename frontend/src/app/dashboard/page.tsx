@@ -19,12 +19,31 @@ export default function Dashboard() {
   const [riskValue, setRiskValue] = useState<string>("N/A");
   const [safetyScore, setSafetyScore] = useState<number | null>(null);
   const [userCoordinates, setUserCoordinates] = useState<[number, number] | null>(null);
+  const [routeData, setRouteData] = useState<any>(null);
 
   // This sample fireData array is used in the chat prompt.
   const fireData = [
-    { Name: "Sepulveda Fire", Location: "405 Freeway, North Sepulveda Boulevard", County: "Los Angeles", AcresBurned: 45, Url: "https://www.fire.ca.gov/incidents/2025/1/23/sepulveda-fire/" },
-    { Name: "Gilman Fire", Location: "Gilman Drive, South of La Jolla", County: "San Diego", AcresBurned: 2, Url: "https://www.fire.ca.gov/incidents/2025/1/23/gilman-fire/" },
-    { Name: "Gibbel Fire", Location: "State Street and Gibbel Road, Hemet", County: "Riverside", AcresBurned: 15, Url: "https://www.fire.ca.gov/incidents/2025/1/23/gibbel-fire/" }
+    {
+      Name: "Sepulveda Fire",
+      Location: "405 Freeway, North Sepulveda Boulevard",
+      County: "Los Angeles",
+      AcresBurned: 45,
+      Url: "https://www.fire.ca.gov/incidents/2025/1/23/sepulveda-fire/",
+    },
+    {
+      Name: "Gilman Fire",
+      Location: "Gilman Drive, South of La Jolla",
+      County: "San Diego",
+      AcresBurned: 2,
+      Url: "https://www.fire.ca.gov/incidents/2025/1/23/gilman-fire/",
+    },
+    {
+      Name: "Gibbel Fire",
+      Location: "State Street and Gibbel Road, Hemet",
+      County: "Riverside",
+      AcresBurned: 15,
+      Url: "https://www.fire.ca.gov/incidents/2025/1/23/gibbel-fire/",
+    }
   ];
 
   const aqi = 157;
@@ -35,9 +54,11 @@ export default function Dashboard() {
       riskValue={riskValue}
       userCoordinates={userCoordinates}
       fireData={fireData}
+      routeData={routeData}
       setSafetyScore={setSafetyScore}
       setRiskValue={setRiskValue}
       setUserCoordinates={setUserCoordinates}
+      setRouteData={setRouteData}
     >
       <div className="flex flex-col h-screen bg-white text-gray-800">
         {/* Page Header */}

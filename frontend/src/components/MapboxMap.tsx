@@ -6,6 +6,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import axios from "axios";
 import * as turf from "@turf/turf";
 import type { FeatureCollection, Feature, Point, Polygon } from "geojson";
+import { useWildfireContext } from "@/context/WildfireContext";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN!;
 
@@ -154,9 +155,12 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   onCoordinatesChange,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<[number, number]>(
     personData.features[0].geometry.coordinates as [number, number]
   );
+
+  const { routeData } = useWildfireContext();
 
   const computeSafetyScore = (coords: [number, number]): number => {
     const R = 2; // danger zone radius in km
@@ -202,6 +206,8 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
       center,
       zoom,
     });
+
+    mapRef.current = map;
 
     map.on("load", () => {
       // Add fire markers with popups
@@ -260,6 +266,67 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
 
     return () => map.remove();
   }, []);
+
+  // Update route layer when routeData changes
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+    if (routeData && routeData.geometry) {
+      const geometry = routeData.geometry;
+      if (
+        geometry.type === "LineString" &&
+        Array.isArray(geometry.coordinates) &&
+        geometry.coordinates.length > 0
+      ) {
+        const routeGeoJSON: GeoJSON.Feature<GeoJSON.LineString> = {
+          type: "Feature",
+          geometry: geometry,
+          properties: {},
+        };
+        if (map.getSource("route")) {
+          (map.getSource("route") as mapboxgl.GeoJSONSource).setData(routeGeoJSON);
+        } else {
+          map.addSource("route", {
+            type: "geojson",
+            data: routeGeoJSON,
+          });
+          map.addLayer({
+            id: "route-layer",
+            type: "line",
+            source: "route",
+            layout: {
+              "line-join": "round",
+              "line-cap": "round",
+            },
+            paint: {
+              "line-color": "#1db7dd",
+              "line-width": 5,
+            },
+          });
+        }
+        // Fit map bounds to the route
+        const coordinates = geometry.coordinates;
+        const bounds = coordinates.reduce(
+          (bounds: mapboxgl.LngLatBounds, coord: number[]) =>
+            bounds.extend(coord as [number, number]),
+          new mapboxgl.LngLatBounds(
+            coordinates[0] as [number, number],
+            coordinates[0] as [number, number]
+          )
+        );
+        map.fitBounds(bounds, { padding: 40 });
+      } else {
+        console.error("Invalid route geometry", geometry);
+      }
+    } else {
+      if (map.getLayer("route-layer")) {
+        map.removeLayer("route-layer");
+      }
+      if (map.getSource("route")) {
+        map.removeSource("route");
+      }
+    }
+  }, [routeData]);
 
   return (
     <div className="relative" style={{ width, height }}>

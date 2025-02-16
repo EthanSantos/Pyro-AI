@@ -205,32 +205,36 @@ const ChatTab = () => {
                 ? await getLocationDetails(userCoordinates)
                 : "Unknown location";
 
-            const contextInfo = `
-                Safety Assessment:
-                - Safety Score: ${safetyScore !== null ? `${safetyScore}/100 (${safetyScore < 50 ? 'Unsafe' : 'Moderate Safety'})` : "N/A"}
-                - Wildfire Risk Level: ${riskValue} (${riskValue === "0%" ? "No current fire activity" : "Active fire risk"})
-                Location Context:
+            const prompt = `
+                You are a wildfire safety assistant. Use the following context to answer "How safe am I?" with a brief response (1-2 sentences).
+                
+                Context:
+                - Location: ${locationDetails || "Unknown"}
                 - Coordinates: ${userCoordinates ? userCoordinates.join(", ") : "N/A"}
-                - Area Details: ${locationDetails}
-                - Nearby Fire Incidents: ${fireData.length > 0 ? fireData.map((fire: any) => fire.Name).join(", ") : "None detected"}
-            `;
+                - Active Fires: ${fireData.length} (${fireData.slice(0, 3).map((f: any) => f.Name).join(", ")})
+                - Safety Score: **${safetyScore}/100**
+                - Wildfire Risk: **${riskValue}/100**
+                
+                Instructions:
+                ${safetyScore! < 50 ? `
+                1. Answer the question given the context. If it's like where am I, give the locationDetails and userCoordinates.
+                2. Begin by stating that the low safety score (**${safetyScore}/100**) indicates unsafe conditions.
+                3. Mention the wildfire risk (**${riskValue}**) as an additional factor.
+                4. Provide an urgent safety action tip.
+                ` : `
+                1. Start by mentioning the wildfire risk (**${riskValue}**).
+                2. Refer to the safety score (**${safetyScore}/100**) as a precaution.
+                3. Offer monitoring advice.
+                `}
+                
+                Formatting:
+                - Use bold formatting for numbers (e.g., **like this**).
+                - Avoid combining percentages; explain them separately.
+                
+                Question: ${userMessage}
+                Answer:
+                `;
 
-            const prompt = `As a wildfire safety expert, analyze these key factors in order of priority:
-            1. Safety Score interpretation (emphasize scores below 50 as dangerous)
-            2. Risk level context (explain percentage meaning)
-            3. Proximity to active fires
-            4. Location characteristics
-            
-            Current Situation: ${contextInfo}
-            
-            Formulate response with this structure:
-            a. Immediate safety status summary
-            b. Key risk factors explanation
-            c. Specific recommendations
-            
-            User Question: ${userMessage}
-            
-            Maintain urgent tone for scores below 50. Never contradict safety score with risk percentage - explain they measure different factors.`;
 
             console.log(prompt)
 

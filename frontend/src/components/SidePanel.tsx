@@ -51,7 +51,7 @@ export function SidePanel() {
               <TabsTrigger
                 key={value}
                 value={value}
-                className="flex items-center gap-2 rounded-none"
+                className="flex items-center gap-2 rounded-md"
               >
                 <Icon className="h-4 w-4" />
                 {label}
