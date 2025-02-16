@@ -109,22 +109,28 @@ def predict_wildfire_risk():
         if not data or 'imageUrl' not in data:
             return jsonify({"error": "No image URL provided"}), 400
 
-        # Get coordinates
+        # get coordinates and swap order for OpenMeteo
         coordinates = data.get('coordinates', None)
         if not coordinates or len(coordinates) != 2:
             return jsonify({"error": "Valid coordinates required"}), 400
             
-        latitude, longitude = coordinates
+        # swap longitude, latitude -> latitude, longitude (for OpenMeteo)
+        longitude, latitude = coordinates  # og format from Mapbox
+        weather_coordinates = [latitude, longitude]  # format for OpenMeteo
         
-        # Fetch weather data
+        # validate latitude/longitude ranges
+        if not (-90 <= latitude <= 90) or not (-180 <= longitude <= 180):
+            return jsonify({"error": "Invalid coordinates: latitude must be between -90 and 90, longitude between -180 and 180"}), 400
+        
+        # fetch weather data with correct coordinate order
         weather_data = fetch_weather_data(latitude, longitude)
         if not weather_data:
             return jsonify({"error": "Failed to fetch weather data"}), 500
             
-        # Get AQI from user input or could integrate another API
+        # get AQI from user input or could integrate another API
         aqi = data.get('aqi', 0)
         
-        # Get weather factors from OpenMeteo
+        # get weather factors from OpenMeteo
         temperature = weather_data['temperature']
         humidity = weather_data['humidity']
         wind_speed = weather_data['wind_speed']
