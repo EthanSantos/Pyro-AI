@@ -1,6 +1,6 @@
 Flask
 flask-cors
-tensorflow
 numpy
 Pillow
 requests
+tflite-runtime
