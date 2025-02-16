@@ -13,7 +13,7 @@ function SearchNews({setSubmittedQuery} : {setSubmittedQuery: React.SetStateActi
   const [query, setQuery] = useState<any>("")
 
   return(
-    <div className="relative w-[400px]">
+    <div className="relative w-[400px] pr-4">
       <FaSearch className={`absolute left-4 top-1/2 transform -translate-y-1/2 ${isFocused ? "text-[#DD5A2B]" : "text-muted-foreground"}`}/>
       <Input
         type="text"
