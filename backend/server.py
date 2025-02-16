@@ -7,6 +7,7 @@ from io import BytesIO
 import numpy as np
 import onnxruntime as ort
 import cv2
+from datetime import datetime
 
 from utils.image_processor import preprocess_image
 from utils.video import load_yolo_model, process_frame  # Ensure these functions are implemented
@@ -66,6 +67,41 @@ def download_and_process_image(image_url):
     processed_image = preprocess_image(image)
     return processed_image
 
+
+def fetch_weather_data(latitude, longitude):
+    """
+    Fetch current weather data from OpenMeteo API
+    """
+    try:
+        base_url = "https://api.open-meteo.com/v1/forecast"
+        
+        params = {
+            'latitude': latitude,
+            'longitude': longitude,
+            'current': [
+                'temperature_2m',
+                'relative_humidity_2m',
+                'wind_speed_10m',
+            ],
+            'temperature_unit': 'fahrenheit',
+            'wind_speed_unit': 'mph'
+        }
+        
+        response = requests.get(base_url, params=params)
+        response.raise_for_status()
+        
+        data = response.json()
+        current = data['current']
+        
+        return {
+            'temperature': current['temperature_2m'],
+            'humidity': current['relative_humidity_2m'],
+            'wind_speed': current['wind_speed_10m']
+        }
+    except Exception as e:
+        app.logger.error(f"Error fetching weather data: {str(e)}")
+        return None
+
 @app.route('/api/predict', methods=['POST'])
 def predict_wildfire_risk():
     try:
@@ -73,20 +109,104 @@ def predict_wildfire_risk():
         if not data or 'imageUrl' not in data:
             return jsonify({"error": "No image URL provided"}), 400
 
+        # Get coordinates
         coordinates = data.get('coordinates', None)
+        if not coordinates or len(coordinates) != 2:
+            return jsonify({"error": "Valid coordinates required"}), 400
+            
+        latitude, longitude = coordinates
+        
+        # Fetch weather data
+        weather_data = fetch_weather_data(latitude, longitude)
+        if not weather_data:
+            return jsonify({"error": "Failed to fetch weather data"}), 500
+            
+        # Get AQI from user input or could integrate another API
+        aqi = data.get('aqi', 0)
+        
+        # Get weather factors from OpenMeteo
+        temperature = weather_data['temperature']
+        humidity = weather_data['humidity']
+        wind_speed = weather_data['wind_speed']
+        
+        app.logger.info(f"""
+            Weather data for coordinates {coordinates}:
+            Temperature: {temperature}°F
+            Humidity: {humidity}%
+            Wind Speed: {wind_speed} mph
+        """)
+        
+        # Process image
         app.logger.info(f"Downloading image from: {data['imageUrl']}")
         processed_image = download_and_process_image(data['imageUrl'])
         
-        # Run prediction using ONNX Runtime
+        # Run CNN prediction
         prediction = onnx_predict(session, processed_image)
-        risk_score = float(prediction[0])
-        risk_percentage = int(prediction[0][0] * 100)
+        cnn_score = float(prediction[0][0])
         
-        app.logger.info(f"Prediction made for coordinates {coordinates}: {risk_percentage}%")
+        # Normalize environmental factors
+        aqi_normalized = min(aqi / 500, 1.0)
+        humidity_factor = max(0, 1 - (humidity / 100))
+        
+        # Temperature risk factor (increases after 80°F)
+        temp_factor = 1.0
+        if temperature > 80:
+            temp_factor = 1.0 + ((temperature - 80) / 40)
+        
+        # Wind risk factor (exponential increase after 15mph)
+        wind_factor = 1.0
+        if wind_speed > 15:
+            wind_factor = 1.0 + ((wind_speed - 15) / 15) ** 1.5
+        
+        # Calculate comprehensive risk score
+        base_risk = (
+            0.35 * cnn_score +
+            0.20 * aqi_normalized +
+            0.15 * min(wind_factor, 2.0) +
+            0.15 * min(temp_factor, 2.0) +
+            0.15 * humidity_factor
+        )
+        
+        risk_percentage = min(int(base_risk * 100), 100)
+        
+        if risk_percentage < 20:
+            risk_level = "Very Low"
+        elif risk_percentage < 40:
+            risk_level = "Low"
+        elif risk_percentage < 60:
+            risk_level = "Moderate"
+        elif risk_percentage < 80:
+            risk_level = "High"
+        else:
+            risk_level = "Extreme"
+        
+        app.logger.info(f"""
+            Prediction details for coordinates {coordinates}:
+            CNN Score: {cnn_score:.2f}
+            AQI Factor: {aqi_normalized:.2f}
+            Wind Factor: {wind_factor:.2f}
+            Temperature Factor: {temp_factor:.2f}
+            Humidity Factor: {humidity_factor:.2f}
+            Final Risk: {risk_percentage}% ({risk_level})
+        """)
+        
         return jsonify({
-            "risk": f"{risk_percentage}%",
+            "risk": risk_level,
+            "risk_percentage": f"{risk_percentage}%",
             "coordinates": coordinates,
-            "confidence": risk_percentage
+            "confidence": risk_percentage,
+            "weather": {
+                "temperature": f"{temperature}°F",
+                "humidity": f"{humidity}%",
+                "wind_speed": f"{wind_speed} mph"
+            },
+            "factors": {
+                "cnn_score": f"{(cnn_score * 100):.1f}%",
+                "aqi_impact": f"{(aqi_normalized * 100):.1f}%",
+                "wind_factor": f"{wind_factor:.1f}x",
+                "temperature_factor": f"{temp_factor:.1f}x",
+                "humidity_impact": f"{(humidity_factor * 100):.1f}%"
+            }
         })
 
     except Exception as e:
