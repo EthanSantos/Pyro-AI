@@ -5,10 +5,9 @@ import { usePathname } from "next/navigation";
 import { Home, Map, Newspaper, Settings } from "lucide-react";
 
 const navItems = [
-  { name: "Home", href: "/", icon: Home },
-  { name: "Dashboard", href: "/dashboard", icon: Map },
-  { name: "Settings", href: "/settings", icon: Settings },
-  { name: "News", href: "/news", icon: Newspaper },
+  { name: "HOME", href: "/", icon: Home },
+  { name: "DASHBOARD", href: "/dashboard", icon: Map },
+  { name: "NEWS", href: "/news", icon: Newspaper },
 ];
 
 export default function NavigationBar() {
