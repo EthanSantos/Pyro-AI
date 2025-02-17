@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPin } from 'lucide-react';
-import { Badge } from "@/components/ui/badge";
 
 interface EvacShelter {
   name: string;

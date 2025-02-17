@@ -10,7 +10,7 @@ import cv2
 from datetime import datetime
 
 from utils.image_processor import preprocess_image
-from utils.video import load_yolo_model, process_frame  # Ensure these functions are implemented
+from utils.video import load_yolo_model, process_frame
 
 app = Flask(__name__)
 CORS(app)
@@ -127,7 +127,6 @@ def predict_wildfire_risk():
         if not weather_data:
             return jsonify({"error": "Failed to fetch weather data"}), 500
             
-        # get AQI from user input or could integrate another API
         aqi = data.get('aqi', 0)
         
         # get weather factors from OpenMeteo

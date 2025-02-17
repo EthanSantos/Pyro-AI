@@ -212,8 +212,8 @@ const shelterData: FeatureCollection<Point, ShelterProperties> = {
 
 // Helper Functions
 function createFireMarkerElement(): HTMLDivElement {
-  const el = document.createElement("div");
-  el.innerHTML = `
+  const element = document.createElement("div");
+  element.innerHTML = `
     <div style="width: 32px; height: 32px; background: rgba(255,69,0,0.9); 
                 border-radius: 50%; display: flex; align-items: center; 
                 justify-content: center; box-shadow: 0 0 10px rgba(255,69,0,0.5);">
@@ -225,12 +225,12 @@ function createFireMarkerElement(): HTMLDivElement {
       </svg>
     </div>
   `;
-  return el;
+  return element;
 }
 
 function createPersonMarkerElement(): HTMLDivElement {
-  const el = document.createElement("div");
-  Object.assign(el.style, {
+  const element = document.createElement("div");
+  Object.assign(element.style, {
     width: "20px",
     height: "20px",
     backgroundColor: "#007aff",
@@ -238,7 +238,7 @@ function createPersonMarkerElement(): HTMLDivElement {
     borderRadius: "50%",
     boxShadow: "0 0 10px rgba(0,0,0,0.15)",
   });
-  return el;
+  return element;
 }
 
 /**
@@ -246,8 +246,8 @@ function createPersonMarkerElement(): HTMLDivElement {
  * Added a link to open the video modal.
  */
 function createShelterMarkerElement(): HTMLDivElement {
-  const el = document.createElement("div");
-  el.innerHTML = `
+  const element = document.createElement("div");
+  element.innerHTML = `
     <div style="width: 28px; height: 28px; background: white; 
                 border-radius: 50%; display: flex; align-items: center; 
                 justify-content: center; border: 2px solid #2563eb;
@@ -260,7 +260,7 @@ function createShelterMarkerElement(): HTMLDivElement {
       </svg>
     </div>
   `;
-  return el;
+  return element;
 }
 
 function createFirePopupContent(properties: FireProperties): string {
@@ -346,10 +346,7 @@ function createShelterPopupContent(properties: ShelterProperties, coordinates: [
   `;
 }
 
-function buildCirclePolygons(
-  pointFeatures: Feature<Point, FireProperties>[],
-  radiusKm: number
-): FeatureCollection<Polygon, FireProperties & { radiusKm: number }> {
+function buildCirclePolygons(pointFeatures: Feature<Point, FireProperties>[], radiusKm: number): FeatureCollection<Polygon, FireProperties & { radiusKm: number }> {
   return {
     type: "FeatureCollection",
     features: pointFeatures.map((feature) => {
@@ -364,17 +361,11 @@ function buildCirclePolygons(
   };
 }
 
-// Modal Component for Video Feed
-// Now using the improved VideoFeed component which has its own close button (X) and toggle.
-const VideoModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
-  isOpen,
-  onClose,
-}) => {
+const VideoModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">
       <div className="bg-white rounded shadow-lg w-11/12 max-w-3xl p-4">
-        {/* VideoFeed now handles its own close action via the onClose prop */}
         <VideoFeed onClose={onClose} />
       </div>
     </div>
@@ -394,8 +385,8 @@ interface MapboxMapProps {
 
 // Main Component
 const MapboxMap: React.FC<MapboxMapProps> = ({
-  width = "100%",
-  height = "600px",
+  width,
+  height,
   center = [-117.237, 32.8622],
   zoom = 12,
   onRiskChange,
@@ -408,7 +399,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     personData.features[0].geometry.coordinates as [number, number]
   );
   const [videoModalOpen, setVideoModalOpen] = useState(false);
-  const [showShelters, setShowShelters] = useState(false);
+  const [showShelters, setShowShelters] = useState(true);
   const shelterMarkersRef = useRef<mapboxgl.Marker[]>([]);
 
   const { routeData } = useWildfireContext();
@@ -496,20 +487,20 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
       });
 
       // Add draggable person marker
-      const personMarkerEl = createPersonMarkerElement();
+      const personMarkerElement = createPersonMarkerElement();
       const marker = new mapboxgl.Marker({
-        element: personMarkerEl,
+        element: personMarkerElement,
         draggable: true,
       })
         .setLngLat(selectedLocation)
         .addTo(map);
 
       marker.on("dragstart", () => {
-        personMarkerEl.style.opacity = "0.5";
+        personMarkerElement.style.opacity = "0.5";
       });
 
       marker.on("dragend", () => {
-        personMarkerEl.style.opacity = "1";
+        personMarkerElement.style.opacity = "1";
         const { lng, lat } = marker.getLngLat();
         const newCoords: [number, number] = [lng, lat];
         setSelectedLocation(newCoords);
@@ -519,7 +510,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         console.log(newCoords)
       });
 
-      // Create shelter markers but don't add them to map yet
+      // Create shelter markers
       shelterMarkersRef.current = shelterData.features.map((shelter) => {
         return new mapboxgl.Marker({ element: createShelterMarkerElement() })
           .setLngLat(shelter.geometry.coordinates as [number, number])

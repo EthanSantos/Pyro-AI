@@ -185,7 +185,7 @@ const ChatTab = () => {
     };
     setMessages((prev) => [...prev, thinkingMsg]);
 
-    // 1. Check for route/directions commands (e.g., "give me directions to ...")
+    // Regex check for route/directions commands
     const routeMatch = userMessage.match(
       /(?:find|show|plan|give)(?: me)?(?: a safe)?(?: an?)? (?:route|path|directions) to (.+)/i
     );
